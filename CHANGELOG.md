@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `UpdateDialog.kt`: Material 3 modal dialog showing release notes, download progress bar, and installation trigger.
   - `SettingsScreen.kt`: Dedicated "App Updates" section with version display, channel selector, and manual update trigger.
 - **Automated CI/CD**:
-  - `.github/workflows/release.yml`: Automated build, test, checksum generation, and GitHub release publication on `v*` tag push.
+  - `docs/WORKFLOW_RELEASE.md`: Automated build, test, checksum generation, and GitHub release pipeline specification.
 - **Documentation**:
   - `docs/ARCHITECTURE.md`: Complete system architecture and subsystem relationships.
   - `docs/IN_APP_UPDATES.md`: Technical deep dive into the update verification flow.
