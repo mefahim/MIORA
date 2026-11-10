@@ -95,6 +95,7 @@ fun LyricsScreen(playerViewModel: PlayerViewModel, onBack: () -> Unit) {
                         size = 52.dp,
                         cornerRadius = 8.dp,
                         albumId = track.albumId,
+                        track = track,
                     )
                     Spacer(Modifier.width(Spacing.md))
                     Column {

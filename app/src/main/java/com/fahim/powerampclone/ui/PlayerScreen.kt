@@ -70,6 +70,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fahim.powerampclone.artwork.DynamicPalette
+import com.fahim.powerampclone.artwork.rememberArtworkBitmap
+import com.fahim.powerampclone.artwork.rememberDynamicPalette
 import com.fahim.powerampclone.design.LocalMioraPalette
 import com.fahim.powerampclone.design.Spacing
 import com.fahim.powerampclone.design.TouchTargets
@@ -87,12 +90,13 @@ fun NowPlayingScreen(
 ) {
     val state by playerViewModel.state.collectAsState()
     val track = state.currentTrack
-    val palette = LocalMioraPalette.current
+    val artworkBitmap = rememberArtworkBitmap(track = track, albumId = track?.albumId)
+    val dynamicPalette = rememberDynamicPalette(track = track, bitmap = artworkBitmap)
 
     val bgBrush = Brush.verticalGradient(
         colors = listOf(
-            palette.playerBg1,
-            palette.playerBg2,
+            dynamicPalette.gradientTop,
+            dynamicPalette.gradientBottom,
             MaterialTheme.colorScheme.background,
         ),
     )
@@ -153,6 +157,8 @@ fun NowPlayingScreen(
                             size = 280.dp,
                             cornerRadius = 24.dp,
                             albumId = track.albumId,
+                            track = track,
+                            bitmap = artworkBitmap,
                         )
                         Spacer(Modifier.width(Spacing.xxl))
                         PlayerControlsColumn(
@@ -162,6 +168,7 @@ fun NowPlayingScreen(
                             onNavigate = onNavigate,
                             favoriteScale = favoriteScale,
                             progress = progress,
+                            dynamicPalette = dynamicPalette,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -179,6 +186,8 @@ fun NowPlayingScreen(
                             size = 300.dp,
                             cornerRadius = 24.dp,
                             albumId = track.albumId,
+                            track = track,
+                            bitmap = artworkBitmap,
                         )
                         Spacer(Modifier.height(Spacing.lg))
                         PlayerControlsColumn(
@@ -188,6 +197,7 @@ fun NowPlayingScreen(
                             onNavigate = onNavigate,
                             favoriteScale = favoriteScale,
                             progress = progress,
+                            dynamicPalette = dynamicPalette,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -205,6 +215,7 @@ private fun PlayerControlsColumn(
     onNavigate: (String) -> Unit,
     favoriteScale: Float,
     progress: Float,
+    dynamicPalette: DynamicPalette,
     modifier: Modifier,
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -237,7 +248,7 @@ private fun PlayerControlsColumn(
                 Icon(
                     imageVector = if (track.id in state.favorites) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = if (track.id in state.favorites) "Remove from favourites" else "Add to favourites",
-                    tint = if (track.id in state.favorites) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (track.id in state.favorites) dynamicPalette.primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(26.dp),
                 )
             }
@@ -268,8 +279,8 @@ private fun PlayerControlsColumn(
                 isUserSeeking = false
             },
             colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary,
+                thumbColor = dynamicPalette.primaryColor,
+                activeTrackColor = dynamicPalette.primaryColor,
                 inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
             modifier = Modifier.fillMaxWidth(),
@@ -305,7 +316,7 @@ private fun PlayerControlsColumn(
                 Icon(
                     Icons.Filled.Shuffle,
                     contentDescription = if (state.shuffle) "Shuffle on" else "Shuffle off",
-                    tint = if (state.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (state.shuffle) dynamicPalette.primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -321,8 +332,8 @@ private fun PlayerControlsColumn(
                 onClick = { playerViewModel.togglePlayPause() },
                 modifier = Modifier.size(72.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = dynamicPalette.primaryColor,
+                    contentColor = dynamicPalette.onPrimary,
                 ),
             ) {
                 Icon(
@@ -351,7 +362,7 @@ private fun PlayerControlsColumn(
                 Icon(
                     icon,
                     contentDescription = label,
-                    tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (active) dynamicPalette.primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -360,7 +371,7 @@ private fun PlayerControlsColumn(
         Spacer(Modifier.height(Spacing.lg))
 
         // Ambient Waveform Strip
-        WaveformStrip(seed = track.artworkSeed, progress = progress)
+        WaveformStrip(seed = track.artworkSeed, progress = progress, activeColor = dynamicPalette.primaryColor)
 
         Spacer(Modifier.height(Spacing.lg))
 
@@ -423,6 +434,8 @@ fun MiniPlayer(
     val track = state.currentTrack ?: return
     val currentDuration = state.currentDurationMs
     val progress = if (currentDuration > 0L) (state.positionMs.toFloat() / currentDuration).coerceIn(0f, 1f) else 0f
+    val artworkBitmap = rememberArtworkBitmap(track = track, albumId = track.albumId)
+    val dynamicPalette = rememberDynamicPalette(track = track, bitmap = artworkBitmap)
 
     Surface(
         modifier = modifier
@@ -443,7 +456,7 @@ fun MiniPlayer(
                     modifier = Modifier
                         .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
                         .height(2.5.dp)
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(dynamicPalette.primaryColor),
                 )
             }
 
@@ -466,6 +479,8 @@ fun MiniPlayer(
                         size = 48.dp,
                         cornerRadius = 8.dp,
                         albumId = track.albumId,
+                        track = track,
+                        bitmap = artworkBitmap,
                     )
                     Spacer(Modifier.width(Spacing.md))
                     Column(Modifier.weight(1f)) {

@@ -96,17 +96,19 @@ class PlaybackManager(
             else -> listOf(track) + _state.value.queue
         }
         val index = effectiveQueue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
+        val selectedTrack = effectiveQueue[index]
+        repository.recordPlayback(selectedTrack.id)
         _state.update {
             it.copy(
                 queue = effectiveQueue,
                 queueOrder = effectiveQueue.map { t -> t.id },
                 currentIndex = index,
                 positionMs = 0L,
-                durationMs = track.durationMs,
+                durationMs = selectedTrack.durationMs,
                 isPlaying = true,
             )
         }
-        audioEngine.play(effectiveQueue[index])
+        audioEngine.play(selectedTrack)
         context?.let { PlaybackService.start(it) }
     }
 
@@ -196,8 +198,9 @@ class PlaybackManager(
     }
 
     fun toggleFavorite(trackId: Long) {
+        val isFav = repository.toggleFavorite(trackId)
         _state.update {
-            val favs = if (trackId in it.favorites) it.favorites - trackId else it.favorites + trackId
+            val favs = if (isFav) it.favorites + trackId else it.favorites - trackId
             it.copy(favorites = favs)
         }
     }
@@ -242,6 +245,22 @@ class PlaybackManager(
             val nextTrack = mutable[newIndex]
             audioEngine.play(nextTrack)
             context?.let { PlaybackService.start(it) }
+        }
+    }
+
+    fun addToQueue(track: Track) {
+        _state.update { s ->
+            val updated = s.queue + track
+            s.copy(queue = updated, queueOrder = updated.map { it.id })
+        }
+    }
+
+    fun playNext(track: Track) {
+        _state.update { s ->
+            val insertIndex = (s.currentIndex + 1).coerceAtMost(s.queue.size)
+            val mutable = s.queue.toMutableList()
+            mutable.add(insertIndex, track)
+            s.copy(queue = mutable, queueOrder = mutable.map { it.id })
         }
     }
 

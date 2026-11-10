@@ -307,6 +307,7 @@ fun HomeScreen(
                                 size = 132.dp,
                                 cornerRadius = 16.dp,
                                 albumId = track.albumId,
+                                track = track,
                             )
                             Spacer(Modifier.height(Spacing.sm))
                             Text(
@@ -371,6 +372,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                 ) {
                     items(libraryViewModel.playlists) { playlist ->
+                        val firstTrack = libraryViewModel.trackById(playlist.trackIds.firstOrNull() ?: 0L)
                         Column(
                             modifier = Modifier
                                 .width(132.dp)
@@ -382,6 +384,8 @@ fun HomeScreen(
                                 title = playlist.name,
                                 size = 132.dp,
                                 cornerRadius = 16.dp,
+                                track = firstTrack,
+                                albumId = firstTrack?.albumId,
                             )
                             Spacer(Modifier.height(Spacing.sm))
                             Text(

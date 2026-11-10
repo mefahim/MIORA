@@ -169,8 +169,9 @@ class PlayerViewModel(
             playbackManager.toggleFavorite(trackId)
             return
         }
+        val isFav = repository.toggleFavorite(trackId)
         _state.update {
-            val favs = if (trackId in it.favorites) it.favorites - trackId else it.favorites + trackId
+            val favs = if (isFav) it.favorites + trackId else it.favorites - trackId
             it.copy(favorites = favs)
         }
     }
@@ -219,6 +220,30 @@ class PlayerViewModel(
                 positionMs = if (wasCurrent) 0L else s.positionMs,
                 durationMs = if (wasCurrent) mutable[newIndex].durationMs else s.durationMs,
             )
+        }
+    }
+
+    fun addToQueue(track: Track) {
+        if (playbackManager != null) {
+            playbackManager.addToQueue(track)
+            return
+        }
+        _state.update { s ->
+            val updated = s.queue + track
+            s.copy(queue = updated, queueOrder = updated.map { it.id })
+        }
+    }
+
+    fun playNext(track: Track) {
+        if (playbackManager != null) {
+            playbackManager.playNext(track)
+            return
+        }
+        _state.update { s ->
+            val insertIndex = (s.currentIndex + 1).coerceAtMost(s.queue.size)
+            val mutable = s.queue.toMutableList()
+            mutable.add(insertIndex, track)
+            s.copy(queue = mutable, queueOrder = mutable.map { it.id })
         }
     }
 

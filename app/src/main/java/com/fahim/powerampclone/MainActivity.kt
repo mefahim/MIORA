@@ -63,6 +63,7 @@ import com.fahim.powerampclone.ui.LyricsScreen
 import com.fahim.powerampclone.ui.MiniPlayer
 import com.fahim.powerampclone.ui.NowPlayingScreen
 import com.fahim.powerampclone.ui.PlaylistsScreen
+import com.fahim.powerampclone.ui.PlaylistDetailScreen
 import com.fahim.powerampclone.ui.QueueScreen
 import com.fahim.powerampclone.ui.SearchScreen
 import com.fahim.powerampclone.ui.SettingsScreen
@@ -249,7 +250,13 @@ private fun AppNavHost(
             ArtistsScreen(libraryViewModel, back) { navigate(Routes.artist(it)) }
         }
         composable(Routes.PLAYLISTS) {
-            PlaylistsScreen(libraryViewModel, back) { navigate(Routes.playlist(it)) }
+            PlaylistsScreen(
+                libraryViewModel = libraryViewModel,
+                playerViewModel = playerViewModel,
+                onBack = back,
+                onPlaylist = { navigate(Routes.playlist(it)) },
+                onOpenPlayer = { navigate(Routes.PLAYER) },
+            )
         }
         composable(Routes.FOLDERS) {
             FoldersScreen(libraryViewModel, playerViewModel, back) { navigate(Routes.PLAYER) }
@@ -331,19 +338,13 @@ private fun AppNavHost(
             arguments = listOf(navArgument("playlistId") { type = NavType.LongType }),
         ) { entry ->
             val playlistId = entry.arguments?.getLong("playlistId") ?: -1
-            val playlist = libraryViewModel.playlistById(playlistId)
-            if (playlist != null) {
-                DetailScreen(
-                    title = playlist.name,
-                    subtitle = if (playlist.isSmart) "Smart playlist" else "Playlist",
-                    seed = playlist.artworkSeed,
-                    trackCountLabel = "${playlist.trackIds.size} tracks",
-                    tracks = libraryViewModel.tracksByIds(playlist.trackIds),
-                    playerViewModel = playerViewModel,
-                    onBack = back,
-                    onOpenPlayer = { navigate(Routes.PLAYER) },
-                )
-            }
+            PlaylistDetailScreen(
+                playlistId = playlistId,
+                libraryViewModel = libraryViewModel,
+                playerViewModel = playerViewModel,
+                onBack = back,
+                onOpenPlayer = { navigate(Routes.PLAYER) },
+            )
         }
     }
 }

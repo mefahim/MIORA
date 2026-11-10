@@ -324,6 +324,7 @@ fun SongsScreen(
                         durationMs = track.durationMs,
                         seed = track.artworkSeed,
                         albumId = track.albumId,
+                        track = track,
                         isPlaying = playerState.currentTrack?.id == track.id && playerState.isPlaying,
                         isFavorite = track.id in playerState.favorites,
                         isSelected = track.id in state.selectedIds,
@@ -451,52 +452,6 @@ fun ArtistsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PlaylistsScreen(
-    libraryViewModel: LibraryViewModel,
-    onBack: () -> Unit,
-    onPlaylist: (Long) -> Unit,
-) {
-    LibraryScaffold(title = "Playlists", onBack = onBack) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(bottom = Spacing.xxl),
-        ) {
-            item {
-                Text(
-                    text = "${libraryViewModel.playlists.size} playlists",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs),
-                )
-            }
-            items(libraryViewModel.playlists) { playlist ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onPlaylist(playlist.id) }
-                        .padding(horizontal = Spacing.lg, vertical = Spacing.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    AlbumArt(seed = playlist.artworkSeed, title = playlist.name, size = 56.dp, cornerRadius = 12.dp)
-                    Spacer(Modifier.width(Spacing.lg))
-                    Column(Modifier.weight(1f)) {
-                        Text(text = playlist.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
-                        Text(
-                            text = "${playlist.trackIds.size} tracks" + if (playlist.isSmart) " • Smart playlist" else "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -552,6 +507,7 @@ fun FoldersScreen(
                             durationMs = track.durationMs,
                             seed = track.artworkSeed,
                             albumId = track.albumId,
+                            track = track,
                             isPlaying = playerState.currentTrack?.id == track.id && playerState.isPlaying,
                             isFavorite = track.id in playerState.favorites,
                             isSelected = false,
@@ -614,6 +570,7 @@ fun GenresScreen(
                             durationMs = track.durationMs,
                             seed = track.artworkSeed,
                             albumId = track.albumId,
+                            track = track,
                             isPlaying = playerState.currentTrack?.id == track.id && playerState.isPlaying,
                             isFavorite = track.id in playerState.favorites,
                             isSelected = false,
@@ -671,12 +628,14 @@ fun DetailScreen(
                         .padding(Spacing.lg),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
+                    val firstTrack = tracks.firstOrNull()
                     AlbumArt(
                         seed = seed,
                         title = title,
                         size = 208.dp,
                         cornerRadius = 20.dp,
                         albumId = albumId,
+                        track = firstTrack,
                     )
                     Spacer(Modifier.height(Spacing.lg))
                     Text(text = title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -720,6 +679,7 @@ fun DetailScreen(
                     durationMs = track.durationMs,
                     seed = track.artworkSeed,
                     albumId = track.albumId,
+                    track = track,
                     isPlaying = playerState.currentTrack?.id == track.id && playerState.isPlaying,
                     isFavorite = track.id in playerState.favorites,
                     isSelected = false,

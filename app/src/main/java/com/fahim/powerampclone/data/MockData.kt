@@ -1,6 +1,8 @@
 package com.fahim.powerampclone.data
 
 import androidx.compose.ui.graphics.Color
+import com.fahim.powerampclone.data.playlist.InMemoryPlaylistStore
+import com.fahim.powerampclone.data.playlist.PlaylistStore
 import com.fahim.powerampclone.model.Album
 import com.fahim.powerampclone.model.Artist
 import com.fahim.powerampclone.model.Genre
@@ -103,29 +105,85 @@ interface MusicRepository {
     fun artistById(id: Long): Artist?
     fun playlistById(id: Long): Playlist?
     fun search(query: String): SearchResults
+
+    // Playlist CRUD & operations
+    fun createPlaylist(name: String, artworkSeed: Color? = null): Playlist?
+    fun renamePlaylist(id: Long, newName: String): Boolean
+    fun deletePlaylist(id: Long): Boolean
+    fun addTracksToPlaylist(playlistId: Long, trackIds: List<Long>)
+    fun removeTrackFromPlaylist(playlistId: Long, trackId: Long, position: Int? = null)
+    fun reorderPlaylistTracks(playlistId: Long, fromIndex: Int, toIndex: Int)
+
+    // Favorites & History
+    fun isFavorite(trackId: Long): Boolean
+    fun toggleFavorite(trackId: Long): Boolean
+    fun recordPlayback(trackId: Long)
+
     data class SearchResults(val tracks: List<Track>, val albums: List<Album>, val artists: List<Artist>, val playlists: List<Playlist>)
 }
 
-class MockMusicRepository : MusicRepository {
-    override fun tracks() = MockData.tracks
+class MockMusicRepository(
+    val playlistStore: PlaylistStore = InMemoryPlaylistStore(),
+) : MusicRepository {
+    override fun tracks() = MockData.tracks.map {
+        it.copy(isFavorite = playlistStore.getFavoriteTrackIds().contains(it.id))
+    }
     override fun albums() = MockData.albums
     override fun artists() = MockData.artists
-    override fun playlists() = MockData.playlists
+    override fun playlists() = playlistStore.getAllPlaylists()
     override fun genres() = MockData.genres
     override fun folders() = MockData.folders
-    override fun recentlyPlayed() = MockData.recentlyPlayedIds.mapNotNull { trackById(it) }
-    override fun trackById(id: Long) = MockData.tracks.firstOrNull { it.id == id }
+    override fun recentlyPlayed(): List<Track> {
+        val ids = playlistStore.getRecentlyPlayedTrackIds(50)
+        val loaded = ids.mapNotNull { trackById(it) }
+        return if (loaded.isNotEmpty()) loaded else MockData.recentlyPlayedIds.mapNotNull { trackById(it) }
+    }
+    override fun trackById(id: Long): Track? {
+        val t = MockData.tracks.firstOrNull { it.id == id } ?: return null
+        return t.copy(isFavorite = playlistStore.getFavoriteTrackIds().contains(id))
+    }
     override fun albumById(id: Long) = MockData.albums.firstOrNull { it.id == id }
     override fun artistById(id: Long) = MockData.artists.firstOrNull { it.id == id }
-    override fun playlistById(id: Long) = MockData.playlists.firstOrNull { it.id == id }
+    override fun playlistById(id: Long) = playlistStore.getPlaylistById(id)
+
+    override fun createPlaylist(name: String, artworkSeed: Color?): Playlist? =
+        playlistStore.createPlaylist(name, artworkSeed)
+
+    override fun renamePlaylist(id: Long, newName: String): Boolean =
+        playlistStore.renamePlaylist(id, newName)
+
+    override fun deletePlaylist(id: Long): Boolean =
+        playlistStore.deletePlaylist(id)
+
+    override fun addTracksToPlaylist(playlistId: Long, trackIds: List<Long>) =
+        playlistStore.addTracksToPlaylist(playlistId, trackIds)
+
+    override fun removeTrackFromPlaylist(playlistId: Long, trackId: Long, position: Int?) =
+        playlistStore.removeTrackFromPlaylist(playlistId, trackId, position)
+
+    override fun reorderPlaylistTracks(playlistId: Long, fromIndex: Int, toIndex: Int) =
+        playlistStore.reorderTracks(playlistId, fromIndex, toIndex)
+
+    override fun isFavorite(trackId: Long): Boolean =
+        playlistStore.getFavoriteTrackIds().contains(trackId)
+
+    override fun toggleFavorite(trackId: Long): Boolean {
+        val fav = isFavorite(trackId)
+        playlistStore.setFavorite(trackId, !fav)
+        return !fav
+    }
+
+    override fun recordPlayback(trackId: Long) =
+        playlistStore.recordPlayback(trackId)
+
     override fun search(query: String): MusicRepository.SearchResults {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return MusicRepository.SearchResults(emptyList(), emptyList(), emptyList(), emptyList())
         return MusicRepository.SearchResults(
-            tracks = MockData.tracks.filter { it.title.lowercase().contains(q) || it.artist.lowercase().contains(q) || it.album.lowercase().contains(q) },
+            tracks = tracks().filter { it.title.lowercase().contains(q) || it.artist.lowercase().contains(q) || it.album.lowercase().contains(q) },
             albums = MockData.albums.filter { it.title.lowercase().contains(q) || it.artist.lowercase().contains(q) },
             artists = MockData.artists.filter { it.name.lowercase().contains(q) },
-            playlists = MockData.playlists.filter { it.name.lowercase().contains(q) },
+            playlists = playlists().filter { it.name.lowercase().contains(q) },
         )
     }
 }

@@ -1,6 +1,8 @@
 package com.fahim.powerampclone.ui
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,10 +40,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -50,8 +55,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fahim.powerampclone.artwork.rememberArtworkBitmap
 import com.fahim.powerampclone.design.Spacing
 import com.fahim.powerampclone.design.TouchTargets
+import com.fahim.powerampclone.model.Track
 import com.fahim.powerampclone.model.formatDuration
 import kotlin.math.abs
 import kotlin.math.cos
@@ -75,9 +82,8 @@ fun mixColors(c1: Color, c2: Color, t: Float): Color {
 }
 
 /**
- * Procedural vector cover art engine. Directly translates the 7 album motifs
- * from web-preview/js/artwork.js onto a hardware-accelerated Compose Canvas.
- * No external raster assets, scalable to any resolution.
+ * Unified AlbumArt composable. Renders real embedded/MediaStore artwork when available,
+ * falling back seamlessly to the procedural vector cover art engine when no raster image exists.
  */
 @Composable
 fun AlbumArt(
@@ -89,8 +95,12 @@ fun AlbumArt(
     albumId: Long? = null,
     motif: String? = null,
     isCircle: Boolean = false,
+    track: Track? = null,
+    bitmap: Bitmap? = null,
 ) {
     val shape = if (isCircle) CircleShape else RoundedCornerShape(cornerRadius)
+    val resolvedBitmap = bitmap ?: rememberArtworkBitmap(track = track, albumId = albumId)
+
     val motifs = listOf("arcs", "sunrise", "neon", "waves", "eq", "skyline", "orbits")
     val resolvedMotif = motif ?: when {
         albumId != null && albumId in 1L..7L -> when (albumId) {
@@ -116,10 +126,19 @@ fun AlbumArt(
             .semantics { contentDescription = "Album artwork for $title" },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(modifier = Modifier.size(size)) {
-            val scaleFactor = this.size.width / 200f
-            scale(scaleFactor, scaleFactor, pivot = Offset.Zero) {
-                drawMotif(resolvedMotif, seed)
+        if (resolvedBitmap != null && !resolvedBitmap.isRecycled) {
+            Image(
+                bitmap = resolvedBitmap.asImageBitmap(),
+                contentDescription = "Album artwork for $title",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Canvas(modifier = Modifier.size(size)) {
+                val scaleFactor = this.size.width / 200f
+                scale(scaleFactor, scaleFactor, pivot = Offset.Zero) {
+                    drawMotif(resolvedMotif, seed)
+                }
             }
         }
     }
@@ -355,6 +374,7 @@ fun TrackRow(
     onMoreClick: () -> Unit = {},
     leadingNumber: Int? = null,
     albumId: Long? = null,
+    track: Track? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -378,7 +398,7 @@ fun TrackRow(
                 modifier = Modifier.width(28.dp),
             )
         }
-        AlbumArt(seed = seed, title = title, size = 48.dp, cornerRadius = 8.dp, albumId = albumId)
+        AlbumArt(seed = seed, title = title, size = 48.dp, cornerRadius = 8.dp, albumId = albumId, track = track)
         Spacer(Modifier.width(Spacing.md))
         Column(Modifier.weight(1f)) {
             Text(
@@ -498,7 +518,7 @@ fun EmptyState(
 }
 
 @Composable
-fun WaveformStrip(seed: Color, progress: Float, modifier: Modifier = Modifier) {
+fun WaveformStrip(seed: Color, progress: Float, activeColor: Color = seed, modifier: Modifier = Modifier) {
     val peaks = rememberPeaks(seed)
     Canvas(modifier = modifier.fillMaxWidth().height(48.dp)) {
         val barWidth = size.width / peaks.size
@@ -506,7 +526,7 @@ fun WaveformStrip(seed: Color, progress: Float, modifier: Modifier = Modifier) {
             val h = size.height * peak
             val played = i.toFloat() / peaks.size <= progress
             drawRoundRect(
-                color = if (played) seed else seed.copy(alpha = 0.28f),
+                color = if (played) activeColor else activeColor.copy(alpha = 0.28f),
                 topLeft = Offset(i * barWidth + 1f, (size.height - h) / 2f),
                 size = Size((barWidth - 2f).coerceAtLeast(1f), h),
                 cornerRadius = CornerRadius(2f, 2f),

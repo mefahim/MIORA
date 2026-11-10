@@ -22,6 +22,7 @@ import android.provider.MediaStore
 import android.util.Size
 import com.fahim.powerampclone.MainActivity
 import com.fahim.powerampclone.R
+import com.fahim.powerampclone.artwork.ArtworkResolver
 import com.fahim.powerampclone.data.local.MediaStoreMusicRepository
 import com.fahim.powerampclone.model.Track
 import kotlinx.coroutines.CoroutineScope
@@ -158,25 +159,8 @@ class PlaybackService : Service() {
     }
 
     private fun getTrackArtworkBitmap(track: Track): Bitmap {
-        if (!track.artworkUriString.isNullOrBlank()) {
-            try {
-                val uri = Uri.parse(track.artworkUriString)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    return contentResolver.loadThumbnail(uri, Size(320, 320), null)
-                } else {
-                    @Suppress("DEPRECATION")
-                    val bm = MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                    if (bm != null) return bm
-                }
-            } catch (_: Exception) {}
-        }
-
-        if (track.contentUriString.isNotBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                return contentResolver.loadThumbnail(Uri.parse(track.contentUriString), Size(320, 320), null)
-            } catch (_: Exception) {}
-        }
-
+        val resolved = ArtworkResolver.resolveArtwork(this, track, targetSize = 320)
+        if (resolved != null) return resolved
         return createFallbackArtworkBitmap(track)
     }
 

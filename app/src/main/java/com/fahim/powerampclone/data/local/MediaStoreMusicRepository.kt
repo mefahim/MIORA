@@ -1,8 +1,11 @@
 package com.fahim.powerampclone.data.local
 
 import android.content.Context
+import androidx.compose.ui.graphics.Color
 import com.fahim.powerampclone.data.MockMusicRepository
 import com.fahim.powerampclone.data.MusicRepository
+import com.fahim.powerampclone.data.playlist.PlaylistStore
+import com.fahim.powerampclone.data.playlist.SQLitePlaylistStore
 import com.fahim.powerampclone.model.Album
 import com.fahim.powerampclone.model.Artist
 import com.fahim.powerampclone.model.Genre
@@ -20,7 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class MediaStoreMusicRepository(
     private val context: Context,
-    private val fallbackRepository: MusicRepository = MockMusicRepository(),
+    val playlistStore: PlaylistStore = SQLitePlaylistStore(context),
+    private val fallbackRepository: MusicRepository = MockMusicRepository(playlistStore),
 ) : MusicRepository {
 
     private val _isPermissionGranted = MutableStateFlow(PermissionHelper.hasMediaPermission(context))
@@ -61,8 +65,11 @@ class MediaStoreMusicRepository(
         _isLocalLoaded.value = false
     }
 
-    override fun tracks(): List<Track> =
-        cachedLibrary?.tracks ?: fallbackRepository.tracks()
+    override fun tracks(): List<Track> {
+        val raw = cachedLibrary?.tracks ?: fallbackRepository.tracks()
+        val favs = playlistStore.getFavoriteTrackIds()
+        return raw.map { it.copy(isFavorite = favs.contains(it.id)) }
+    }
 
     override fun albums(): List<Album> =
         cachedLibrary?.albums ?: fallbackRepository.albums()
@@ -71,7 +78,7 @@ class MediaStoreMusicRepository(
         cachedLibrary?.artists ?: fallbackRepository.artists()
 
     override fun playlists(): List<Playlist> =
-        fallbackRepository.playlists()
+        playlistStore.getAllPlaylists()
 
     override fun genres(): List<Genre> =
         cachedLibrary?.genres ?: fallbackRepository.genres()
@@ -80,16 +87,21 @@ class MediaStoreMusicRepository(
         cachedLibrary?.folders ?: fallbackRepository.folders()
 
     override fun recentlyPlayed(): List<Track> {
-        val all = tracks()
-        return if (_isLocalLoaded.value) {
-            all.take(6)
+        val ids = playlistStore.getRecentlyPlayedTrackIds(50)
+        val resolved = ids.mapNotNull { trackById(it) }
+        return if (resolved.isNotEmpty()) {
+            resolved
+        } else if (_isLocalLoaded.value) {
+            tracks().take(6)
         } else {
             fallbackRepository.recentlyPlayed()
         }
     }
 
-    override fun trackById(id: Long): Track? =
-        tracks().firstOrNull { it.id == id }
+    override fun trackById(id: Long): Track? {
+        val t = (cachedLibrary?.tracks ?: fallbackRepository.tracks()).firstOrNull { it.id == id } ?: return null
+        return t.copy(isFavorite = playlistStore.getFavoriteTrackIds().contains(id))
+    }
 
     override fun albumById(id: Long): Album? =
         albums().firstOrNull { it.id == id }
@@ -98,7 +110,37 @@ class MediaStoreMusicRepository(
         artists().firstOrNull { it.id == id }
 
     override fun playlistById(id: Long): Playlist? =
-        playlists().firstOrNull { it.id == id }
+        playlistStore.getPlaylistById(id)
+
+    override fun createPlaylist(name: String, artworkSeed: Color?): Playlist? =
+        playlistStore.createPlaylist(name, artworkSeed)
+
+    override fun renamePlaylist(id: Long, newName: String): Boolean =
+        playlistStore.renamePlaylist(id, newName)
+
+    override fun deletePlaylist(id: Long): Boolean =
+        playlistStore.deletePlaylist(id)
+
+    override fun addTracksToPlaylist(playlistId: Long, trackIds: List<Long>) =
+        playlistStore.addTracksToPlaylist(playlistId, trackIds)
+
+    override fun removeTrackFromPlaylist(playlistId: Long, trackId: Long, position: Int?) =
+        playlistStore.removeTrackFromPlaylist(playlistId, trackId, position)
+
+    override fun reorderPlaylistTracks(playlistId: Long, fromIndex: Int, toIndex: Int) =
+        playlistStore.reorderTracks(playlistId, fromIndex, toIndex)
+
+    override fun isFavorite(trackId: Long): Boolean =
+        playlistStore.getFavoriteTrackIds().contains(trackId)
+
+    override fun toggleFavorite(trackId: Long): Boolean {
+        val fav = isFavorite(trackId)
+        playlistStore.setFavorite(trackId, !fav)
+        return !fav
+    }
+
+    override fun recordPlayback(trackId: Long) =
+        playlistStore.recordPlayback(trackId)
 
     override fun search(query: String): MusicRepository.SearchResults {
         val q = query.trim().lowercase()
