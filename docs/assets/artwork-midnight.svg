@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600" fill="none">
+  <defs>
+    <radialGradient id="m-bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#1E1B38"/>
+      <stop offset="50%" stop-color="#100E22"/>
+      <stop offset="100%" stop-color="#070611"/>
+    </radialGradient>
+    <linearGradient id="neon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="50%" stop-color="#009587"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Canvas -->
+  <rect width="600" height="600" rx="36" fill="url(#m-bg)"/>
+
+  <!-- Violet Neon Glow -->
+  <circle cx="380" cy="220" r="160" fill="#7C3AED" opacity="0.35"/>
+  <circle cx="180" cy="380" r="140" fill="#009587" opacity="0.35"/>
+
+  <!-- Geometric Soundscape -->
+  <polygon points="300,120 480,440 120,440" stroke="url(#neon-grad)" stroke-width="2.5" fill="none" opacity="0.6"/>
+  <polygon points="300,180 430,420 170,420" stroke="#06B6D4" stroke-width="1.5" stroke-dasharray="4 6" fill="none" opacity="0.4"/>
+
+  <!-- Pulse Core -->
+  <circle cx="300" cy="320" r="38" fill="#18152E" stroke="#8B5CF6" stroke-width="2.5"/>
+  <circle cx="300" cy="320" r="12" fill="#06B6D4"/>
+</svg>

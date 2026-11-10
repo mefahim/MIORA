@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600" fill="none">
+  <defs>
+    <radialGradient id="d-bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1B2824"/>
+      <stop offset="60%" stop-color="#0E1714"/>
+      <stop offset="100%" stop-color="#060A08"/>
+    </radialGradient>
+    <linearGradient id="aurora-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00BFA5"/>
+      <stop offset="50%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Deep Canvas -->
+  <rect width="600" height="600" rx="36" fill="url(#d-bg)"/>
+
+  <!-- Fluid Aurora Ribbons -->
+  <path d="M-50 220 C140 120, 260 340, 650 180 L650 340 C420 480, 160 300, -50 420 Z" fill="url(#aurora-grad)" opacity="0.45"/>
+  <path d="M-50 280 C180 180, 310 400, 650 240 L650 380 C390 510, 120 360, -50 480 Z" fill="#00BFA5" opacity="0.3"/>
+
+  <!-- Sonic Floating Spheres -->
+  <circle cx="210" cy="240" r="85" fill="#00897B" opacity="0.5"/>
+  <circle cx="420" cy="360" r="110" fill="#D97706" opacity="0.4"/>
+  <circle cx="310" cy="290" r="45" fill="#FDE68A" opacity="0.7"/>
+
+  <!-- Subtle concentric rings -->
+  <circle cx="300" cy="300" r="230" stroke="#00BFA5" stroke-width="1.5" stroke-dasharray="4 12" opacity="0.35"/>
+  <circle cx="300" cy="300" r="170" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="8 6" opacity="0.3"/>
+</svg>
