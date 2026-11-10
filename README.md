@@ -85,3 +85,19 @@ To strictly adhere to intellectual property laws and clean-room engineering stan
 ## 📄 License
 
 This research and specification documentation is licensed under the [Apache License 2.0](LICENSE).
+
+---
+
+## 📱 Phase 2 — UI/UX Implementation (Jetpack Compose)
+
+Phase 2 builds the complete application interface on top of the Phase 1 research:
+single-module Kotlin + Jetpack Compose + Material 3 app with Material You dynamic colour
+(plus artwork-derived accents and a non-purple fallback palette), full library / Now Playing /
+Queue / Search / Settings screens, simulated playback, and a deterministic sample library.
+
+- **Implementation report**: [research/20-PHASE-2-UI-IMPLEMENTATION-REPORT.md](research/20-PHASE-2-UI-IMPLEMENTATION-REPORT.md)
+- **Status**: COMPLETE WITH CONDITIONS — all screens and interactions are implemented;
+  `./gradlew assembleDebug` / `testDebugUnitTest` / `lintDebug` could not run in the
+  original build sandbox (Gradle daemon loopback IPC failure, proven in the report)
+  and must be run on a developer machine or Android Studio first.
+- **Scope reminder**: UI only — no audio engine, DSP, FFmpeg, or native code in this phase.

@@ -17,3 +17,6 @@ local.properties
 *.hprof
 .DS_Store
 Thumbs.db
+
+# Phase 2 Android app
+*.aab
