@@ -41,6 +41,7 @@ All detailed engineering and forensic reports are located in the [`research/`](r
 | **[16](research/16-QA-CORRECTION-LOG.md)** | **QA & Consistency Log** | Final Phase 1.2 QA corrections, audio claim qualifications, and FFmpeg compliance audit. |
 | **[17](research/17-PHASE-1.2.1-CORRECTION-REPORT.md)** | **Phase 1.2.1 Correction Report** | Residual technical evidence corrections, DSP precision bounds, HAL routing, and LGPL analysis. |
 | **[18](research/18-PHASE-1.2.2-FINAL-QA-REPORT.md)** | **Phase 1.2.2 Final QA Report** | Final repository consistency cleanup, evidentiary matrix labels, and Phase 1 baseline review. |
+| **[19](research/19-PHASE-1.2.2.1-FINAL-CERTIFICATION.md)** | **Phase 1.2.2.1 Final Certification** | Final evidence correction, link reconciliation, CPU performance qualification, and baseline certification. |
 
 ---
 

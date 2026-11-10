@@ -26,7 +26,7 @@ This document logs the final quality assurance (QA) audit and consistency correc
 - **Evidentiary Audit & Resolutions**:
   1. **"1500 dB Dynamic Range" vs Exponent Span**:
      - *Evidence*: IEEE 754 32-bit float spans exponents from $10^{-38}$ to $10^{38}$ (~1520 dB mathematical range), but instantaneous SNR is bounded by its 24-bit mantissa (~144 dB).
-     - *Correction*: Removed blanket claims of "1500 dB dynamic headroom". Qualified that 32-bit float provides scale-invariant intermediate arithmetic preventing digital clipping during multi-band EQ boosts, but does not increase DAC analog dynamic range.
+     - *Correction*: Removed blanket claims of "1500 dB dynamic headroom". Qualified that 32-bit float provides scale-invariant intermediate arithmetic avoiding intermediate fixed-point overflow during multi-band EQ boosts, but does not increase DAC analog dynamic range.
   2. **"64-bit float DSP" vs "32-bit float PCM"**:
      - *Evidence*: `Coefs.java` JNI signature takes `double[][] outCoefs` (64-bit double-precision IIR filter coefficients). Native PCM audio buffers stream in 32-bit float (`float`).
      - *Correction*: Explicitly distinguished 64-bit double filter coefficient calculation from 32-bit float PCM audio buffer streaming.
@@ -126,3 +126,21 @@ With Phase 1.2 completed, the documentation suite in [`research/`](.) and [`PHAS
   4. **FFmpeg Evidence Hardening**: Explicitly bounded `readelf -d` evidence to external dynamic dependencies; qualified `nm -D` dynamic symbol analysis limits; articulated Android APK user library relinking challenges under LGPL v2.1 Section 6; and placed codec patent pool exposure under formal legal review.
 - **Phase 1 Baseline Review Verdict**: **READY WITH CONDITIONS** (Condition 1: UI-only scope for Phase 2; Condition 2: Resolution of FFmpeg vs platform codec strategy prior to Phase 3 audio engine; Condition 3: Physical device verification for high-res audio claims).
 - **Verification**: All 70 canonical feature classifications strictly preserved (13 / 55 / 1 / 1 / 0); 66 declared screen components preserved (8 / 22 / 6 / 8 / 5 / 17); APK SHA-256 verified; 0 production code files; 0 broken links. Phase 2 not started.
+
+---
+
+## 7. Phase 1.2.2.1 Final Evidence Correction & Baseline Certification
+
+- **Milestone Date**: March 2026
+- **Starting Commit**: `2b7c389313e9acd8b5504827361188abf64e7987`
+- **Comprehensive Report**: [`research/19-PHASE-1.2.2.1-FINAL-CERTIFICATION.md`](19-PHASE-1.2.2.1-FINAL-CERTIFICATION.md)
+- **Automated Validation Script**: [`scripts/validate_phase1.py`](../scripts/validate_phase1.py)
+- **Scope**: Final evidence correction, link reconciliation, CPU performance qualification, legal risk bifurcation, and baseline certification.
+- **Key Corrections**:
+  1. **QA Provenance Correction**: Updated Deliverable 18 Section 2 and Section 7 to record tested commit `2b7c389` and verify remote push on `origin/main`.
+  2. **Deterministic Link Reconciliation**: Established canonical link counting methodology across all 22 Markdown files; documented historical link count progression (Phase 1.2: 45 -> Phase 1.2.1: 76 -> Phase 1.2.2: 112 -> Current: 112 relative links, 26 unique targets, 0 broken links).
+  3. **Float PCM & Clipping Reality**: Audited all documents to ensure floating-point PCM is described strictly as providing scale-invariant intermediate arithmetic avoiding immediate fixed-point overflow, while explicitly articulating that float PCM does NOT automatically prevent clipping if intermediate DSP stages clamp values, and that conversion to constrained integer PCM or hardware DAC output requires deliberate gain management, soft limiting, or attenuation.
+  4. **CPU Performance Qualification**: Removed unsupported ARM64 percentage CPU benchmark claim from Deliverable 18; qualified PRD metric as a design target budget requiring empirical physical device profiling.
+  5. **Bifurcated Legal Risk Reassessment**: Separated clean-room proprietary IP risk (Low) from third-party licensing compliance risk (Open / Unresolved pending implementation resolution of Android LGPL v2.1 Section 6 user relinking and patent pool review).
+- **Phase 1 Final Baseline Verdict**: **READY WITH CONDITIONS** (Condition 1: Strict UI-only scope for Phase 2; Condition 2: FFmpeg architecture resolution before Phase 3; Condition 3: Physical device verification for high-res audio claims).
+- **Verification**: All 12 automated checks in `scripts/validate_phase1.py` passed with 100% compliance. Zero production code files. Phase 2 not started.

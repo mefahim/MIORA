@@ -104,7 +104,7 @@ journey
 ### B. Memory & Resource Footprint
 - **RAM Consumption**: Under 80 MB steady-state memory usage during active playback with artwork cached.
 - **Battery Consumption**: Under 2% battery drain per hour of screen-off background playback.
-- **CPU Utilization**: Under 3% CPU utilization during 32-bit float DSP processing on ARM64.
+- **CPU Utilization (Target Budget)**: Design target budget under 3% CPU utilization during 32-bit float DSP processing on ARM64 (engineering target estimate; requires empirical physical device profiling during implementation).
 
 ### C. Reliability & Robustness
 - **Crash-Free Sessions**: > 99.9% target crash-free rate.

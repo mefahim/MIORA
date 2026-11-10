@@ -78,7 +78,7 @@ When an authorized physical test environment or emulator is configured in future
    - Drag node frequency to 250 Hz, gain to -6 dB, and adjust Q-factor from 0.7 to 4.0.
    - Verify dynamic frequency response curve updates in real time.
 3. **Software Headroom & Tone Controls**:
-   - Verify master volume scales in 32-bit float DSP without clipping on positive EQ gains.
+   - Verify master volume scales in 32-bit float DSP with appropriate gain attenuation or soft limiting to avoid output clipping on positive EQ gains.
    - Rotate Bass and Treble dials; confirm low-shelf and high-shelf acoustic response.
 
 ### Test Suite 5: Synchronized Lyrics & Offset

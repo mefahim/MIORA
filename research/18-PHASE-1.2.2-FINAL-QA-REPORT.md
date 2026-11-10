@@ -34,8 +34,8 @@ Zero production code was written, the original APK baseline remains cryptographi
 | :--- | :--- | :--- | :--- |
 | **Original Research Baseline** | `1e0420395f73f13ebeb86e78cbcea09bc6b796e9` | Phase 1 Initial Reverse-Engineering Baseline | In History (`merge-base` verified) |
 | **Phase 1.2 Starting QA** | `0971ce4af373bdcad50c29aaa77b892945605187` | Phase 1.2 Hardened Audit & Validation | Verified Parent (`HEAD~1` of Phase 1.2.1) |
-| **Phase 1.2.1 Accepted** | `cc3d44973ae1a970df823811bc6e4b27918bab58` | `docs(qa): complete Phase 1.2.1 residual technical evidence corrections` | Verified `main` / `origin/main` |
-| **Phase 1.2.2 Final** | *Pending commit* | `docs(qa): finalize Phase 1 repository consistency and baseline review` | Current Working State |
+| **Phase 1.2.1 Accepted** | `cc3d44973ae1a970df823811bc6e4b27918bab58` | `docs(qa): complete Phase 1.2.1 residual technical evidence corrections` | Verified in History (`HEAD~1` of Phase 1.2.2) |
+| **Phase 1.2.2 Final Milestone** | `2b7c389313e9acd8b5504827361188abf64e7987` | `docs(qa): finalize Phase 1 repository consistency and baseline review` | Branch `main`, Verified on `origin/main` (PASS) |
 
 ---
 
@@ -46,7 +46,7 @@ Zero production code was written, the original APK baseline remains cryptographi
 | [`research/17-PHASE-1.2.1-CORRECTION-REPORT.md`](17-PHASE-1.2.1-CORRECTION-REPORT.md) | Updated Section 2 with final commit `cc3d449`, commit message, branch `main`, verified remote push PASS; corrected APK file size to `24,481,502` bytes (~23.35 MB); reconciled link validation count. |
 | [`research/08-CODE-PATH-ANALYSIS.md`](08-CODE-PATH-ANALYSIS.md) | Renamed subsystem 05 in overview tree to "Floating-Point Audio Processing Pipeline"; converted file scheme URI to relative link; qualified Path 04 decoding precision; thoroughly qualified Path 05 floating-point dynamic range, clipping, and DAC limiting. |
 | [`research/03-TECH-STACK-ANALYSIS.md`](03-TECH-STACK-ANALYSIS.md) | Refined audio precision row in Section 4 matrix to avoid absolute clipping prevention claims; aligned licensing risk description with clean-room boundaries. |
-| [`PHASE-1-FINAL-REPORT.md`](../PHASE-1-FINAL-REPORT.md) | Refined Architecture B description and audiophile validation note to distinguish scale-invariant intermediate arithmetic from guaranteed clipping elimination. |
+| [`PHASE-1-FINAL-REPORT.md`](../PHASE-1-FINAL-REPORT.md) | Refined Architecture B description and audiophile validation note to distinguish scale-invariant intermediate arithmetic from assumptions of clipping elimination. |
 | [`research/10-INDEPENDENT-ARCHITECTURE.md`](10-INDEPENDENT-ARCHITECTURE.md) | Added evidentiary labels (`[DOCUMENTED]`, `[DESIGN TARGET]`, `[ENGINEERING ESTIMATE]`, etc.) to every matrix row; explicitly qualified Architecture B as a recommended design target rather than proven production performance. |
 | [`research/12-RISK-AND-LICENSING.md`](12-RISK-AND-LICENSING.md) | Delineated `readelf -d` scope (external `DT_NEEDED` dependencies only vs static components); qualified `nm -D` exported symbol limits; documented full source audit prerequisites; articulated Android user relinking/replacement challenge. |
 | [`research/16-QA-CORRECTION-LOG.md`](16-QA-CORRECTION-LOG.md) | Appended Phase 1.2.2 entry linking to Deliverable 18; confirmed final baseline certification. |
@@ -110,7 +110,7 @@ Zero production code was written, the original APK baseline remains cryptographi
 | **Exported Symbols (`nm -D`)** | Implied symbol tables confirmed lack of non-free code | Stated exported symbols reveal public interfaces, but cannot prove complete license compliance or absence of stripped/inlined components |
 | **Architecture Comparison Matrix** | Unqualified metrics (`<10ms`, `20–40ms`, `99.5% compatibility`) | Explicitly tagged metrics (`[DOCUMENTED]`, `[DESIGN TARGET]`, `[ENGINEERING ESTIMATE]`, `[UNVERIFIED]`) |
 | **APK File Size in Docs** | `17,453,954 bytes` in Deliverable 17 | `24,481,502 bytes` (~23.35 MB) matching actual file size and `01-APK-FORENSIC-REPORT.md` |
-| **Markdown Link Metrics** | Discrepancy between 45 and 76 links | Fully reconciled: 45 baseline links across 19 files + 31 links added across Deliverables 16, 17, and README = 76 relative links; 0 broken links |
+| **Markdown Link Metrics** | Discrepancy between 45, 76, and 112 links | Fully reconciled by repository evolution: Phase 1.2 baseline had 45 links across 19 files; Phase 1.2.1 added Deliverable 17 (+23) and Section 5 (+7) + README (+1) = 76 links across 20 files; Phase 1.2.2 added Deliverable 18 and Section 6 = 112 relative links across 21 files; 0 broken links |
 
 ---
 
@@ -142,7 +142,7 @@ The automated QA test script executed all 10 required checks against actual repo
 [PASS] 2_feature_counts: 04=(13, 55, 1, 1, 0), 14=(13, 55, 1, 1, 0), Total=70
 [PASS] 3_screen_counts: Total=66, Breakdown: 8, 22, 6, 8, 5, 17
 [PASS] 4_markdown_links: Files=21, Total rel links=112, Unique targets=26, Broken=0
-[PASS] 5_provenance: Branch=main, HEAD=cc3d449, Baseline 1e04203 in history
+[PASS] 5_provenance: Branch=main, HEAD=2b7c389, Baseline 1e04203 in history, origin/main verified
 [PASS] 6_wording_scan: 0 active forbidden/unqualified phrases
 [PASS] 7_prod_code_isolation: 0 production source/build files found
 [PASS] 8_security_integrity: 0 root/tampering/DRM bypass mechanisms
@@ -204,9 +204,11 @@ Total Features: 70 (100%)
 
 ### C. Risk Assessment
 1. **Technical Risk**: **Low to Moderate**. Core player, library management, and Room database architecture are standard Android practices. Custom 32-bit float DSP audio sink requires careful buffer management and soft limiter tuning.
-2. **Legal & Licensing Risk**: **Low**. Clean-room design rules strictly prevent copying proprietary code or decompiled bytecode. FFmpeg usage is subject to documented LGPL compliance requirements or can be bypassed in favor of Media3 system codecs.
+2. **Legal & Licensing Risk**:
+   - **Clean-Room Proprietary IP Risk**: **Low** (governed by strict clean-room boundaries, independent functional specification, and zero proprietary code copying).
+   - **Third-Party Licensing & Compliance Risk**: **Open / Unresolved** (FFmpeg LGPL v2.1 Section 6 user relinking/replacement mechanism under Android application sandboxing remains an unresolved architectural challenge; codec patent pool exposure under MPEG LA / Via Licensing for software decoders in specific jurisdictions requires formal review by qualified intellectual property legal counsel).
 3. **Hardware Verification Risk**: **Moderate**. Physical audio routing, USB DAC compatibility, and bit-perfect DAC validation require dedicated physical Android test devices during Phase 3.
-4. **Performance Risk**: **Low**. Software 32-bit float DSP math on modern ARM64 CPUs consumes negligible CPU (<3-5% on modern chipsets) when vector math is utilized.
+4. **Performance Risk**: **Low**. Software 32-bit float DSP processing on modern ARM64 CPUs is an unmeasured engineering estimate; actual CPU utilization, thermal overhead, and battery consumption must be empirically measured and profiled on target hardware devices during implementation.
 5. **Scope Risk**: **Low**. Phase-by-phase roadmap in [`research/13-IMPLEMENTATION-ROADMAP.md`](13-IMPLEMENTATION-ROADMAP.md) establishes strict scope boundaries.
 
 ### D. Implementation Readiness Verdict

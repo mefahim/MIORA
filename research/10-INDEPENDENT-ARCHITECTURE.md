@@ -122,8 +122,8 @@ In compliance with Phase 1.1 architectural validation, we rigorously evaluate th
 ### Critical Technical Distinctions
 
 > [!WARNING]
-> **Float PCM vs. Bit-Perfect Output**:
-> 32-bit floating-point PCM (`AudioFormat.ENCODING_PCM_FLOAT`) provides scale-invariant numerical dynamic range that prevents internal clipping and accumulation distortion during DSP equalization. However, **Float PCM is NOT identical to bit-perfect output**. Bit-perfect reproduction means the digital audio samples delivered to the hardware DAC are mathematically identical to the source file without gain changes, equalization, or sample-rate conversion.
+> **Float PCM vs. Bit-Perfect Output & Clipping Realities**:
+> 32-bit floating-point PCM (`AudioFormat.ENCODING_PCM_FLOAT`) provides scale-invariant numerical dynamic range that accommodates intermediate signal levels outside the normalized $[-1.0, 1.0]$ range without immediate fixed-point overflow during DSP equalization. However, **Float PCM does NOT by itself guarantee clipping prevention**: if any DSP stage explicitly clamps values, saturation occurs; and at the final conversion to fixed-point hardware AudioTrack or DAC output, any signal exceeding $0\text{ dBFS}$ ($\pm 1.0$) will hard clip unless proper gain attenuation or soft limiting is applied. Furthermore, **Float PCM is NOT identical to bit-perfect output**. Bit-perfect reproduction means the digital audio samples delivered to the hardware DAC are mathematically identical to the source file without gain changes, equalization, or sample-rate conversion.
 > - Active equalization, volume scaling, or crossfading inherently modifies sample values and precludes bit-perfect reproduction.
 > - Even with DSP disabled, bit-perfect reproduction requires establishing that the complete source-to-DAC path bypassed system mixing and resampling. Output format, sample rate, mixing, and resampling behavior depend on the Android version, device audio policy, HAL implementation, and output path.
 

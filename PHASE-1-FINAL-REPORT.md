@@ -98,7 +98,7 @@ All 12 prioritized subsystems are reverse-engineered and documented in [`researc
 2. **PlayerServiceCore**: Central state machine implementing `OnAudioFocusChangeListener`, `MsgBus`, and `StateBus`.
 3. **Pipeline2 JNI Bridge**: Lock-free control gateway exposing native transport methods and C++ audio callbacks.
 4. **Audio Decoding**: FFmpeg NEON decoders in `libffmpeg_neon.so` converting streams into uncompressed float PCM buffers.
-5. **Native DSP Invocation**: Floating-point processing loop in `libpowerampcore.so` (64-bit double filter coefficients and 32-bit float PCM buffers providing scale-invariant intermediate arithmetic to prevent digital clipping).
+5. **Native DSP Invocation**: Floating-point processing loop in `libpowerampcore.so` (64-bit double filter coefficients and 32-bit float PCM buffers providing scale-invariant intermediate arithmetic avoiding immediate fixed-point overflow).
 6. **Equalizer & Biquad Mathematics**: `Band.java` and `Coefs.java` evaluating Robert Bristow-Johnson Audio EQ Cookbook IIR transfer functions.
 7. **AudioTrack / AAudio Output**: `AthdPluginService.java` routing 32-bit float PCM (`AudioFormat.ENCODING_PCM_FLOAT`) up to 384kHz.
 8. **MediaSession & Notification**: `MediaSessionCompat` synchronizing transport actions, lock screen metadata, and MediaStyle notification.
