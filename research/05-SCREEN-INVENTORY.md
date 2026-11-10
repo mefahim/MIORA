@@ -1,118 +1,169 @@
-# 05 — Comprehensive Screen & Component Inventory
+# 05 — Comprehensive Screen & Component Classification
 
-## 1. Overview
-The target application declares **66 distinct activities** in its manifest, comprising main interface containers, dialog sheets, widget configuration flows, skin theme entry points, licensing gates, and third-party provider integration endpoints.
+## 1. Overview & Activity Taxonomy
+The target application declares **66 distinct activities** in `AndroidManifest.xml`. Under Phase 1.1 architectural hardening, these 66 activities are audited and categorized into 6 functional classifications. 
 
----
+> [!IMPORTANT]
+> Of the 66 declared activities, **only 8 are persistent user-facing screen containers**. The remaining 58 components represent modal dialog sheets (22), widget configuration wizards (6), payment and licensing gateways (8), third-party integration endpoints (5), and internal routing trampolines or dynamic launcher aliases (17).
 
-## 2. Primary Interface Containers
-
-| Component Name | Description / Visual Role | Exported | Launch Mode | Verification |
-| :--- | :--- | :--- | :--- | :--- |
-| `StartupActivity` | Initial splash, permission onboarding dispatcher, and cold-start router | `true` | `standard` | `VERIFIED_STATIC` |
-| `MainActivity` | Primary application window hosting the main player screen, library browser, and bottom control bar | `true` | `singleTask` | `VERIFIED_STATIC` |
-| `PlayerUIActivity` | Fullscreen player view with album artwork, waveform seekbar, and transport controls | `true` | `standard` | `VERIFIED_STATIC` |
-| `ListActivity` | Library list/grid view (All Songs, Albums, Artists, Genres, Playlists, Folders) | `true` | `standard` | `VERIFIED_STATIC` |
-| `PlayListActivity` | Playlist viewing, track reordering, and playlist metadata management | `true` | `standard` | `VERIFIED_STATIC` |
-| `EqActivity` | Multi-band and parametric equalizer, tone controls, reverb, and preset selector | `true` | `standard` | `VERIFIED_STATIC` |
-| `USBMainActivity` | Dedicated launch activity triggered when a USB DAC / audio interface is connected | `true` | `singleTask` | `VERIFIED_STATIC` |
-
----
-
-## 3. Settings & Configuration Hierarchy
-
-| Component Name | Description / Visual Role | Exported | Launch Mode | Verification |
-| :--- | :--- | :--- | :--- | :--- |
-| `preference.SettingsActivity` | Root settings dashboard with category search and navigation | `true` | `standard` | `VERIFIED_STATIC` |
-| `SettingsActivity` | Alias / entry point for general application preferences | `true` | `standard` | `VERIFIED_STATIC` |
-| `preference.SettingsActivityManageSpace` | Android System Storage management endpoint (Clear Cache, Reset DB) | `true` | `standard` | `VERIFIED_STATIC` |
-| `preference.SettingsLicenseActivity` | License status, purchase recovery, and registration screen | `false` | `standard` | `VERIFIED_STATIC` |
+```
+Total Declared Activity Components: 66
+├── USER_FACING_SCREEN: 8
+├── DIALOG_OR_SHEET: 22
+├── WIDGET_CONFIGURATION: 6
+├── PAYMENT_OR_LICENSING: 8
+├── THIRD_PARTY_INTEGRATION: 5
+├── INTERNAL_ACTIVITY (Trampolines & Aliases): 17
+└── UNKNOWN: 0
+```
 
 ---
 
-## 4. Modal Dialog & Auxiliary Activities
+## 2. Detailed Component Classification Matrix
 
-| Component Name | Purpose / UI Description | Theme / Style | Verification |
+### Category 1: USER_FACING_SCREEN (8 Components)
+Interactive, primary destination containers hosting the main application UI tree:
+
+| Activity Name | Launch Mode | Exported | Navigation / Visual Responsibility |
 | :--- | :--- | :--- | :--- |
-| `dialogs.WelcomeActivity` | First-run onboarding wizard and basic permission request flow | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.MusicFoldersActivity` | Storage folder picker and SAF directory selection manager | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.InfoActivity` | Audio technical details sheet (codec, sample rate, bit depth, bitrate) | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.AudioInfoActivity` | Extended audio stream and DSP pipeline diagnostics sheet | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.EditTagActivity` | Audio metadata tag editor (Title, Artist, Album, Year, Genre, Track #) | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.LyricsActivity` | Synced and unsynced lyrics viewer, offset adjuster, and external provider launcher | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.SelectAlbumArtActivity` | Album art chooser, cache inspector, and online art downloader | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.EqPresetsActivity` | Equalizer presets manager, search, and AutoEq browser | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.AddEqPresetActivity` | Dialog to save, name, and bind a new custom EQ preset | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.AddReverbPresetActivity` | Dialog to save and name a custom reverb acoustics preset | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.EqPresetAssignActivity` | Assigns EQ presets to specific output devices (BT MAC, USB, Wired) or tracks | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.PlaylistSelectActivity` | "Add to Playlist" destination selector dialog | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.PlaylistShortcutActivity` | Homescreen shortcut creator for selected playlist | Standard | `VERIFIED_STATIC` |
-| `dialogs.PlaylistSortActivity` | Sorting criteria selector for playlist tracks | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.PlaylistsExportActivity` | M3U/M3U8 playlist export directory and file selector | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.ListOptsActivity` | View options sheet (List vs Grid, Zoom level, Compact mode, Collation) | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.AudioBufferActivity` | Audio buffer size and output latency fine-tuning dialog | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.EditNameActivity` | Generic text entry dialog to rename playlists or presets | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.ChangelogActivity` | What's new in this build release notes sheet | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.AutoFindDialogActivity` | Automated missing file search dialog | Modal Dialog | `VERIFIED_STATIC` |
-| `dialogs.GenericDialogActivity` | System confirmation and alert dialog host | Modal Dialog | `VERIFIED_STATIC` |
-| `widget.app.AlertDialogActivity` | Custom-styled alert dialog wrapper | Modal Dialog | `VERIFIED_STATIC` |
+| `MainActivity` | `singleTask` | `true` | Root container hosting Main Player, Library Browser, and persistent Mini-Player |
+| `PlayerUIActivity` | `standard` | `true` | Dedicated fullscreen playback window with large album art and RMS waveform |
+| `ListActivity` | `standard` | `true` | Category list/grid view (All Songs, Albums, Artists, Genres, Folders) |
+| `PlayListActivity` | `standard` | `true` | Playlist content manager with drag-and-drop track reordering |
+| `EqActivity` | `standard` | `true` | Studio Equalizer console (Graphic/Parametric bands, Bass/Treble dials, Reverb) |
+| `USBMainActivity` | `singleTask` | `true` | Hardware DAC exclusive-mode player interface |
+| `preference.SettingsActivity` | `standard` | `true` | Hierarchical preference dashboard with full-text search |
+| `SettingsActivity` | `standard` | `true` | Backward-compatibility entry point routing into `preference.SettingsActivity` |
 
----
+### Category 2: DIALOG_OR_SHEET (22 Components)
+Contextual modal sheets, bottom drawers, and transient configuration dialogs:
 
-## 5. Homescreen Widget Configuration Activities
-
-| Component Name | Target Widget Dimension | Exported | Verification |
-| :--- | :--- | :--- | :--- |
-| `widgetpackcommon.Widget4x1Configure` | 4x1 Standard Player Widget | `true` | `VERIFIED_STATIC` |
-| `widgetpackcommon.Widget4x2Configure` | 4x2 Player + Track Info Widget | `true` | `VERIFIED_STATIC` |
-| `widgetpackcommon.Widget2x2Configure` | 2x2 Compact Artwork Widget | `true` | `VERIFIED_STATIC` |
-| `widgetpackcommon.Widget4x4Configure` | 4x4 Full Featured Player Widget | `true` | `VERIFIED_STATIC` |
-| `widgetpackcommon.Widget4x2ConfigureCover` | 4x2 Large Cover Art Widget | `true` | `VERIFIED_STATIC` |
-| `widgetpackcommon.Widget4x4ConfigureCover` | 4x4 Full Artwork Showcase Widget | `true` | `VERIFIED_STATIC` |
-
----
-
-## 6. Theme & Dynamic Launcher Icon Aliases (15 Activities)
-
-The application declares 15 distinct activity aliases to support dynamic themed app icons and theme switching without restarting the process:
-
-1. `com.maxmpz.audioplayer.rounded_play_inverted_mu`
-2. `com.maxmpz.audioplayer.rounded_inverted_mu`
-3. `com.maxmpz.audioplayer.rounded_play_mu`
-4. `com.maxmpz.audioplayer.rounded_mu`
-5. `com.maxmpz.audioplayer.standard_mu`
-6. `com.maxmpz.audioplayer.white_play_adaptive`
-7. `com.maxmpz.audioplayer.black_play_adaptive`
-8. `com.maxmpz.audioplayer.classic`
-9. `com.maxmpz.audioplayer.white_round`
-10. `com.maxmpz.audioplayer.black_round`
-11. `com.maxmpz.audioplayer.zap_plain_adaptive`
-12. `com.maxmpz.audioplayer.zap_round`
-13. `com.maxmpz.audioplayer.zap_adaptive`
-14. `com.maxmpz.audioplayer.round`
-15. `com.maxmpz.audioplayer.standard_adaptive`
-
----
-
-## 7. Licensing & Payment Integration Screens
-
-| Component Name | Role / Integration | Verification |
+| Activity Name | Theme / UI Style | Functional Purpose |
 | :--- | :--- | :--- |
-| `dialogs.ExpiredActivity` | Trial expired modal blocking playback and prompting license purchase | `VERIFIED_STATIC` |
-| `dialogs.APMUnlockDialogActivity` | Web purchase license key entry and email validation dialog | `VERIFIED_STATIC` |
-| `dialogs.HuaweiMigrationActivity` | Migration flow for Huawei AppGallery purchases | `VERIFIED_STATIC` |
-| `RstrActivity` | RuStore payment scheme redirect handler (`rstrpoweramp://`) | `VERIFIED_STATIC` |
-| `ru.rustore.sdk.pay.internal.presentation.ui.PayActivity` | RuStore payment checkout sheet | `VERIFIED_STATIC` |
-| `com.android.billingclient.api.ProxyBillingActivity` | Google Play Billing in-app purchase flow | `VERIFIED_STATIC` |
-| `com.android.billingclient.api.ProxyBillingActivityV2` | Google Play Billing V2 flow | `VERIFIED_STATIC` |
+| `dialogs.WelcomeActivity` | Onboarding Dialog | First-launch permissions walkthrough and storage directory selection |
+| `dialogs.MusicFoldersActivity` | SAF Directory Picker | Storage folder checklist and SAF tree permission grant manager |
+| `dialogs.InfoActivity` | Technical Dialog | Stream inspection (Container, Codec, Bitrate, Sample Rate, Bit Depth) |
+| `dialogs.AudioInfoActivity` | Diagnostics Dialog | Deep audio engine stats (AudioTrack buffer latency, DSP underruns, DVC state) |
+| `dialogs.EditTagActivity` | Editor Sheet | In-app audio metadata editor (Title, Artist, Album, Year, Genre, Track #) |
+| `dialogs.LyricsActivity` | Lyrics Sheet | Synchronized LRC scroller, manual timestamp offset, and external app links |
+| `dialogs.SelectAlbumArtActivity` | Image Picker Sheet | Local artwork chooser, cache manager, and online image search |
+| `dialogs.EqPresetsActivity` | Selector Sheet | Equalizer preset browser, AutoEq profile search, and preset import |
+| `dialogs.AddEqPresetActivity` | Text Dialog | Naming and saving newly constructed graphic or parametric EQ curves |
+| `dialogs.AddReverbPresetActivity` | Text Dialog | Naming and saving custom algorithmic room acoustics presets |
+| `dialogs.EqPresetAssignActivity` | Assignment Sheet | Binds presets to specific output hardware (Bluetooth MAC, USB DAC, Wired) |
+| `dialogs.PlaylistSelectActivity` | Destination Picker | "Add to Playlist" destination selector dialog |
+| `dialogs.PlaylistShortcutActivity` | Shortcut Generator | Configures homescreen 1x1 pin shortcut for direct playlist playback |
+| `dialogs.PlaylistSortActivity` | Options Sheet | Selects sorting criteria (Title, Artist, Track Number, Duration) for playlists |
+| `dialogs.PlaylistsExportActivity` | Storage Sheet | Exports internal SQLite playlists to external `.m3u` / `.m3u8` text files |
+| `dialogs.ListOptsActivity` | Options Sheet | Category view customizer (List vs Grid, Zoom, Compact mode, Collation) |
+| `dialogs.AudioBufferActivity` | Tuning Dialog | Audio buffer size and output latency fine-tuning slider |
+| `dialogs.EditNameActivity` | Text Dialog | Generic rename dialog for playlists, presets, and bookmarks |
+| `dialogs.ChangelogActivity` | Release Notes Sheet | Displays build release notes, new DSP features, and bug fixes |
+| `dialogs.AutoFindDialogActivity` | Scan Dialog | Automated missing file search dialog across external storage |
+| `dialogs.GenericDialogActivity` | System Dialog | Confirmation alert dialog wrapper |
+| `widget.app.AlertDialogActivity` | Styled Dialog | Custom themed alert dialog wrapper |
+
+### Category 3: WIDGET_CONFIGURATION (6 Components)
+Android AppWidget configuration activities opened when placing widgets on the homescreen:
+
+| Activity Name | Target Widget Form Factor | Features Exposed in Config |
+| :--- | :--- | :--- |
+| `widgetpackcommon.Widget4x1Configure` | 4x1 Standard Player | Opacity, play/pause, next/prev, track text |
+| `widgetpackcommon.Widget4x2Configure` | 4x2 Player + Metadata | Album art, scrubber, rating, repeat/shuffle |
+| `widgetpackcommon.Widget2x2Configure` | 2x2 Compact Square | Album art, play/pause overlay |
+| `widgetpackcommon.Widget4x4Configure` | 4x4 Full Feature | Complete player console with interactive controls |
+| `widgetpackcommon.Widget4x2ConfigureCover` | 4x2 Cover Art Focus | High-resolution artwork priority layout |
+| `widgetpackcommon.Widget4x4ConfigureCover` | 4x4 Showcase Cover | Edge-to-edge album cover art showcase |
+
+### Category 4: PAYMENT_OR_LICENSING (8 Components)
+Entitlement checking, license validation, and payment provider integrations:
+
+| Activity Name | Integration Provider | Functional Mechanism |
+| :--- | :--- | :--- |
+| `preference.SettingsLicenseActivity` | Internal License Status | Displays trial days remaining, purchase status, and unlock button |
+| `dialogs.ExpiredActivity` | Modal Enforcement Gate | Blocks audio playback upon 15-day trial expiration |
+| `dialogs.APMUnlockDialogActivity` | Web Purchase Validator | Validates direct website license keys via email authentication |
+| `dialogs.HuaweiMigrationActivity` | Huawei AppGallery | Purchases migration from Huawei AppGallery store |
+| `RstrActivity` | RuStore Protocol Handler | Handles `rstrpoweramp://` deep link payment callbacks |
+| `ru.rustore.sdk.pay.internal.presentation.ui.PayActivity` | RuStore IAP SDK | RuStore native payment checkout sheet |
+| `com.android.billingclient.api.ProxyBillingActivity` | Google Play Billing Client | Play Store in-app purchase flow dispatcher |
+| `com.android.billingclient.api.ProxyBillingActivityV2` | Google Play Billing Client | Play Store billing V2 flow dispatcher |
+
+### Category 5: THIRD_PARTY_INTEGRATION (5 Components)
+OS and external ecosystem integration endpoints:
+
+| Activity Name | Protocol / Ecosystem | Intent Filter / Action |
+| :--- | :--- | :--- |
+| `VoiceSearchHelperActivity` | Google Assistant / Android Auto | `android.media.action.MEDIA_PLAY_FROM_SEARCH` |
+| `PowerampAPIActivity` | Third-party Automation | `com.maxmpz.audioplayer.API_COMMAND` |
+| `MediaRouteChooserActivity` | Google Cast / MediaRouter | Cast route discovery and output picker |
+| `MediaRouteControllerActivity` | Google Cast / MediaRouter | Active Cast session volume and playback controller |
+| `com.google.android.gms.common.api.GoogleApiActivity` | Google Play Services | Resolves missing Google Play Services dependencies |
+
+### Category 6: INTERNAL_ACTIVITY — Trampolines & Dynamic Launcher Aliases (17 Components)
+Non-visual routers, OS storage hooks, and dynamic launcher icon variants:
+
+| Component Name | Type | Purpose |
+| :--- | :--- | :--- |
+| `StartupActivity` | Headless Trampoline | Cold-start entry point; initializes caches, checks permissions, routes to `MainActivity` |
+| `preference.SettingsActivityManageSpace` | OS Storage Hook | Target for Android "Manage Space" button in App Info; clears database/cache |
+| `com.maxmpz.audioplayer.rounded_play_inverted_mu` | Activity Alias | Dynamic Material You themed launcher icon variant |
+| `com.maxmpz.audioplayer.rounded_inverted_mu` | Activity Alias | Dynamic Material You themed launcher icon variant |
+| `com.maxmpz.audioplayer.rounded_play_mu` | Activity Alias | Dynamic Material You themed launcher icon variant |
+| `com.maxmpz.audioplayer.rounded_mu` | Activity Alias | Dynamic Material You themed launcher icon variant |
+| `com.maxmpz.audioplayer.standard_mu` | Activity Alias | Dynamic Material You themed launcher icon variant |
+| `com.maxmpz.audioplayer.white_play_adaptive` | Activity Alias | Dynamic adaptive light theme launcher icon |
+| `com.maxmpz.audioplayer.black_play_adaptive` | Activity Alias | Dynamic adaptive dark theme launcher icon |
+| `com.maxmpz.audioplayer.classic` | Activity Alias | Classic Poweramp icon variant |
+| `com.maxmpz.audioplayer.white_round` | Activity Alias | Round light icon variant |
+| `com.maxmpz.audioplayer.black_round` | Activity Alias | Round dark icon variant |
+| `com.maxmpz.audioplayer.zap_plain_adaptive` | Activity Alias | Adaptive neon icon variant |
+| `com.maxmpz.audioplayer.zap_round` | Activity Alias | Round neon icon variant |
+| `com.maxmpz.audioplayer.zap_adaptive` | Activity Alias | Adaptive neon icon variant |
+| `com.maxmpz.audioplayer.round` | Activity Alias | Standard round icon variant |
+| `com.maxmpz.audioplayer.standard_adaptive` | Activity Alias | Default standard adaptive icon variant |
 
 ---
 
-## 8. Integration & Helper Endpoints
+## 3. Reconstructed Navigation Flow
 
-| Component Name | Role / Protocol | Intent Filter | Verification |
-| :--- | :--- | :--- | :--- |
-| `VoiceSearchHelperActivity` | Handles Google Assistant / Voice Search commands | `android.media.action.MEDIA_PLAY_FROM_SEARCH` | `VERIFIED_STATIC` |
-| `PowerampAPIActivity` | Receives external third-party control intents | `com.maxmpz.audioplayer.API_COMMAND` | `VERIFIED_STATIC` |
-| `MediaRouteChooserActivity` | Google Cast device selection sheet | MediaRouter Intent | `VERIFIED_STATIC` |
-| `MediaRouteControllerActivity` | Active Google Cast volume and stream control sheet | MediaRouter Intent | `VERIFIED_STATIC` |
+```mermaid
+flowchart TD
+    ColdBoot[App Launch] --> StartupActivity[StartupActivity Trampoline]
+    StartupActivity --> CheckFirstRun{First Run / No Storage?}
+    CheckFirstRun -- Yes --> WelcomeDialog[dialogs.WelcomeActivity]
+    WelcomeDialog --> MusicFolders[dialogs.MusicFoldersActivity]
+    MusicFolders --> MainActivity[MainActivity]
+    CheckFirstRun -- No --> MainActivity
+
+    MainActivity --> PlayerView[PlayerUI: Album Art & RMS Waveform]
+    MainActivity --> LibraryView[ListActivity: Categories Grid]
+    MainActivity --> MiniPlayer[Persistent Mini-Player Bar]
+    
+    PlayerView -- Swipe / Tap EQ --> EqActivity[EqActivity: Equalizer Console]
+    PlayerView -- Tap Lyrics --> LyricsDialog[dialogs.LyricsActivity]
+    PlayerView -- Tap Info --> InfoDialog[dialogs.InfoActivity]
+    PlayerView -- Long-press Art --> ArtDialog[dialogs.SelectAlbumArtActivity]
+    PlayerView -- Overflow --> SleepTimer[Sleep Timer Dialog]
+    
+    EqActivity --> EqPresets[dialogs.EqPresetsActivity]
+    EqActivity --> ToneKnobs[Tone Page: Bass / Treble]
+    EqActivity --> ReverbTab[Reverb Page: Freeverb]
+    
+    LibraryView --> SongsList[All Songs]
+    LibraryView --> AlbumsGrid[Albums Grid]
+    LibraryView --> ArtistsList[Artists List]
+    LibraryView --> FoldersTree[Folder Hierarchy]
+    LibraryView --> PlaylistsList[Playlists View]
+    
+    PlaylistsList --> PlayListActivity[PlayListActivity: Reorder Tracks]
+    PlayListActivity --> PlaylistSort[dialogs.PlaylistSortActivity]
+    PlayListActivity --> PlaylistExport[dialogs.PlaylistsExportActivity]
+    
+    MainActivity -- Settings Tap --> SettingsActivity[preference.SettingsActivity]
+    SettingsActivity --> LicenseScreen[SettingsLicenseActivity]
+    SettingsActivity --> BufferTuning[dialogs.AudioBufferActivity]
+    
+    TrialExpired[Trial Period Reached 15 Days] -.-> ExpiredActivity[dialogs.ExpiredActivity]
+    ExpiredActivity --> ProxyBilling[Google Play / RuStore Billing]
+```

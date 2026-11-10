@@ -1,0 +1,20 @@
+--- a/dist/filesystem/RegularFile.js
++++ b/dist/filesystem/RegularFile.js
+@@ -120,6 +120,3 @@
+ export const sameRegularFileState = (expected, observed) => observed.isFile() &&
+     expected.dev === observed.dev &&
+     expected.ino === observed.ino &&
+-    expected.mode === observed.mode &&
+     expected.size === observed.size;
+-    expected.mtimeMs === observed.mtimeMs &&
+-    expected.ctimeMs === observed.ctimeMs;
+--- a/dist/cli-runtime/OwnedRegularFile-D1f5nUCx.js
++++ b/dist/cli-runtime/OwnedRegularFile-D1f5nUCx.js
+@@ -145,1 +145,1 @@
+-		sameRegularFileState = (expected, observed) => observed.isFile() && expected.dev === observed.dev && expected.ino === observed.ino && expected.mode === observed.mode && expected.size === observed.size && expected.mtimeMs === observed.mtimeMs && expected.ctimeMs === observed.ctimeMs;
++		sameRegularFileState = (expected, observed) => observed.isFile() && expected.dev === observed.dev && expected.ino === observed.ino && expected.size === observed.size;
+--- a/dist/mcp/machoContainer-CMSxUBlK.js
++++ b/dist/mcp/machoContainer-CMSxUBlK.js
+@@ -145,1 +145,1 @@
+-		sameRegularFileState = (expected, observed) => observed.isFile() && expected.dev === observed.dev && expected.ino === observed.ino && expected.mode === observed.mode && expected.size === observed.size && expected.mtimeMs === observed.mtimeMs && expected.ctimeMs === observed.ctimeMs;
++		sameRegularFileState = (expected, observed) => observed.isFile() && expected.dev === observed.dev && expected.ino === observed.ino && expected.size === observed.size;

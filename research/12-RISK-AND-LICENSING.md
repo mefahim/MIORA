@@ -1,59 +1,102 @@
 # 12 — Risk Assessment, Licensing Compliance & Clean-Room Boundaries
 
 ## 1. Clean-Room Reverse Engineering Legal Framework
-In accordance with international software copyright laws (including Section 1201(f) of the DMCA and EU Directive 2009/24/EC on the legal protection of computer programs), reverse engineering for the purpose of achieving interoperability and independent functional specification is legally recognized when strict clean-room protocols are maintained.
+In accordance with international software copyright laws (including Section 1201(f) of the US Digital Millennium Copyright Act (DMCA) and EU Directive 2009/24/EC on the legal protection of computer programs), reverse engineering for the purpose of achieving interoperability and independent functional specification is legally recognized when strict clean-room protocols are maintained.
 
 ### Strict Boundaries for the Independent Project
-1. **Zero Proprietary Code Reuse**: Absolutely no decompiled smali, Java, C++, or assembly instructions from `com.maxmpz.audioplayer` or `p000.*` may be copied, pasted, or directly translated into the new project codebase.
-2. **Zero Proprietary Asset Reuse**: No icons, vector drawables, audio sound effects, shaders, or visual themes from the APK may be included. All UI assets must be independently designed or sourced from permissive libraries (e.g. Google Material Icons).
-3. **Trademark & Branding Non-Infringement**: The application must not use the trademarks "Poweramp", "Max MPZ", or confusingly similar naming, iconography, or trade dress. The independent project will use a distinct brand identity (e.g., *Resonate Music Player* / *Pulse Audio Player*).
+1. **Zero Proprietary Code Reuse**: Absolutely no decompiled smali, Java, C++, or assembly instructions from `com.maxmpz.audioplayer` or obfuscated `p000.*` may be copied, pasted, or directly translated into the new project codebase.
+2. **Zero Proprietary Asset Reuse**: No icons, vector drawables, audio sound effects, shaders, or visual themes from the APK may be included. All UI assets must be independently designed or sourced from permissive libraries (e.g. Google Material Symbols under Apache 2.0).
+3. **Trademark & Branding Non-Infringement**: The application must not use the trademarks "Poweramp", "Max MPZ", or confusingly similar naming, iconography, or trade dress. The independent project will use a distinct brand identity (e.g., *Resonate Music Player*).
 4. **Independent Functional Specification**: All algorithms (such as biquad filter calculation and LRC parsing) must be implemented strictly from publicly available scientific literature and standards (e.g., the Robert Bristow-Johnson Audio EQ Cookbook).
 
 ---
 
-## 2. Third-Party Open Source Licensing Audit
+## 2. Open Source Licensing & Build Configuration Audit
 
-| Component / Library | Intended Role in Project | License | Compliance Obligations & Strategy |
-| :--- | :--- | :--- | :--- |
-| **AndroidX Media3 (ExoPlayer)** | Playback engine, MediaSessionService | **Apache 2.0** | Permissive. Requires retaining Apache copyright notice in source code and licenses dialog. |
-| **AndroidX Jetpack & Room** | Architecture components, Compose, DB | **Apache 2.0** | Permissive. Retain notices. |
-| **Google Hilt / Dagger** | Dependency Injection | **Apache 2.0** | Permissive. |
-| **Coil** | Image loading & artwork cache | **Apache 2.0** | Permissive. |
-| **FFmpeg (via Media3 FFmpeg Extension)** | Software decoding of FLAC, ALAC, OPUS, APE, DSD | **LGPL v2.1+ / GPL v2+** | **Strict Compliance**: Compile with `--disable-gpl` to remain under LGPL v2.1. Build as dynamically linked `.so` libraries (`libffmpeg.so`) so users can replace the binary. Provide source code and build scripts in compliance with LGPL Section 6. |
-| **TagLib / JAudioTagger** | Audio metadata tag parsing & editing | **LGPL v2.1 / LGPL v3** | Dynamically link or consume as external modular library; retain open license. |
-| **AutoEq Database** | Headphone frequency response presets | **MIT License** | Fully permissive. Attribute Jaakkopasanen/AutoEq project in app settings. |
-| **projectM** | Optional OpenGL Milkdrop visualizer | **LGPL v2.1+** | Build as dynamic shared library; publish modification scripts if altered. |
+### A. FFmpeg Licensing & Build Strategy
+- **Role in Project**: Decoding audiophile formats (FLAC, ALAC, Opus, APE, WavPack, DSD).
+- **License**: **LGPL v2.1+** (or GPL v2+/v3+ depending on build flags).
+- **Required Build Configuration**:
+  To prevent "GPL viral infection" of the application codebase, FFmpeg MUST be compiled strictly under LGPL v2.1:
+  ```bash
+  ./configure \
+    --enable-cross-compile \
+    --target-os=android \
+    --arch=arm64 \
+    --disable-gpl \
+    --disable-nonfree \
+    --disable-version3 \
+    --enable-shared \
+    --disable-static \
+    --enable-small \
+    --disable-programs \
+    --disable-doc \
+    --disable-everything \
+    --enable-decoder=flac,alac,ape,opus,vorbis,wavpack,mp3,aac \
+    --enable-demuxer=flac,mov,ape,ogg,wavpack,mp3,aac
+  ```
+- **Compliance Obligations**:
+  - Build FFmpeg as dynamically linked shared libraries (`libffmpeg.so`, `libavcodec.so`, etc.).
+  - Comply with LGPL v2.1 Section 6 by providing build scripts and source tarballs enabling end-users to recompile and replace the `.so` binaries.
+  - Do NOT statically link FFmpeg into the application executable.
+
+### B. projectM Visualizer Licensing
+- **Role in Project**: OpenGL Milkdrop visualizer engine.
+- **License**: **LGPL v2.1+**.
+- **Compliance Obligations**:
+  - Build projectM as a dynamic shared library (`libprojectM.so`).
+  - Provide source code for any modifications to the core library.
+  - Preset scripts (`.milk` files) are individually authored; bundled presets must be sourced from open-source repositories with permissive licenses.
+
+### C. Permissive Dependencies (Apache 2.0 / MIT)
+- **AndroidX Media3 (ExoPlayer)**: Apache 2.0 (Google). Retain copyright notices.
+- **AndroidX Jetpack & Room**: Apache 2.0 (Google). Retain copyright notices.
+- **Google Hilt / Dagger**: Apache 2.0 (Google).
+- **Coil Image Loader**: Apache 2.0.
+- **AutoEq Database**: MIT License (Jaakkopasanen). Attribution required in application settings.
 
 ---
 
-## 3. Platform & Google Play Policy Compliance Risks
+## 3. Android Security, Scoped Storage & Permission Audit
 
-### A. Android 11+ Scoped Storage & `MANAGE_EXTERNAL_STORAGE`
-- **Risk**: Google Play enforces strict gating on `android.permission.MANAGE_EXTERNAL_STORAGE` (All Files Access). Google routinely rejects apps requesting this permission unless they are file managers or backup utilities.
-- **Mitigation Strategy**:
-  - Rely primarily on `android.permission.READ_MEDIA_AUDIO` on Android 13+ and `android.permission.READ_EXTERNAL_STORAGE` on Android 12 and below.
-  - For folder browsing, CUE sheets, and `.lrc` external files, use the official **Storage Access Framework (SAF)** `ACTION_OPEN_DOCUMENT_TREE`. When the user explicitly designates their `/Music/` directory via SAF, the application gains persistent read/write access to that specific directory tree without needing the high-risk `MANAGE_EXTERNAL_STORAGE` permission.
+### A. Android Scoped Storage & `MANAGE_EXTERNAL_STORAGE`
+- **Audit Finding**: Poweramp requests `android.permission.MANAGE_EXTERNAL_STORAGE` (All Files Access).
+- **Policy Risk**: Google Play policy strictly restricts `MANAGE_EXTERNAL_STORAGE` to file managers, antivirus, and backup utilities. Music players requesting this permission face immediate rejection or removal.
+- **Independent Compliance Strategy**:
+  1. Primary: Use Android 13+ `android.permission.READ_MEDIA_AUDIO` and legacy `READ_EXTERNAL_STORAGE` (API < 33).
+  2. Extended Storage (CUE sheets, `.lrc` files, custom folders): Utilize the **Storage Access Framework (SAF)** via `Intent.ACTION_OPEN_DOCUMENT_TREE`. When the user explicitly picks their music directory, the app takes a persistable URI permission (`takePersistableUriPermission`), gaining persistent recursive read/write access without requiring `MANAGE_EXTERNAL_STORAGE`.
 
 ### B. Android 14+ Foreground Service Mandates
-- **Risk**: Android 14 (API 34) and Android 15 (API 35) require all foreground services to declare a specific `android:foregroundServiceType` and provide justification during Play Console review.
-- **Mitigation Strategy**:
-  - Declare `android:foregroundServiceType="mediaPlayback"` on `PlaybackService`.
-  - Maintain an active `MediaSession` and ongoing playback notification; Android OS automatically validates this type for media players.
+- **Audit Finding**: Background playback requires strict foreground service declarations.
+- **Policy Compliance**:
+  - Declare `<service android:name=".playback.PlaybackService" android:foregroundServiceType="mediaPlayback" />`.
+  - Maintain an ongoing `MediaStyle` notification coupled with an active `MediaSession`.
+  - Android OS automatically validates this type for audio playback applications.
 
-### C. Android Auto Approval Guidelines
-- **Risk**: Automotive applications on Google Play are subject to Driver Distraction Guidelines and automotive quality reviews.
-- **Mitigation Strategy**:
-  - Implement standard Media3 `MediaLibraryService`.
-  - Avoid deeply nested hierarchies (limit browse depth to 4 levels).
-  - Provide distinct browse categories (Recent, Albums, Artists, Playlists) with properly sized album artwork.
+### C. High-Risk / Specialized Permissions Review
+
+| Permission | Declared in APK | Independent Project Strategy | Risk / Justification |
+| :--- | :--- | :--- | :--- |
+| `POST_NOTIFICATIONS` | Yes | **Required** (Android 13+) | Required to display playback controls in notification shade |
+| `WAKE_LOCK` | Yes | **Required** | Prevents CPU sleep during background playback when screen turns off |
+| `BLUETOOTH_CONNECT` | Yes | **Required** (Android 12+) | Queries Bluetooth device names to auto-restore per-device EQ presets |
+| `MODIFY_AUDIO_SETTINGS` | Yes | **Required** | Manages volume levels and audio focus transitions |
+| `SYSTEM_ALERT_WINDOW` | Yes | **Omit** | Poweramp uses for floating lyrics; omit to prevent Play Store security flags |
+| `WRITE_SETTINGS` | Yes | **Omit** | Poweramp uses for ringtone setting; omit to maintain zero system modification |
+| `moe.shizuku.manager` | Yes | **Optional / Future** | Optional plugin for advanced users; zero core dependence |
 
 ---
 
-## 4. Technical Feasibility & Architectural Risk Matrix
+## 4. Privacy & Offline-First Guarantees
+- **Zero Telemetry**: No third-party tracking, analytics, crash reporting SDKs (e.g., Firebase, AppLovin, adjust) that transmit user listening history or device identifiers.
+- **Local Autonomy**: All database queries, full-text searches, and preset management run locally inside the device SQLite/Room database.
+- **Network Access**: Restricted strictly to optional user-requested actions (e.g., downloading high-res album art or lyrics from user-configured endpoints).
 
-| Risk Factor | Probability | Severity | Mitigation Action |
-| :--- | :--- | :--- | :--- |
-| **Hi-Res Audio Inconsistency across OEMs** | High | Medium | Implement standard 32-bit float PCM via `AudioTrack` as baseline (works uniformly across 99% of devices); offer vendor-specific direct output flags only as an optional advanced toggle. |
-| **Large Library (50k+ tracks) Scanning Latency** | Medium | High | Utilize SQLite Write-Ahead Logging (WAL), indexed columns, batch transactions (`insertAll`), and asynchronous `CoroutineWorker`. |
-| **Audio Glitches during Background Transitions** | Low | High | Elevate audio decoding thread priority to `THREAD_PRIORITY_URGENT_AUDIO`; maintain dedicated buffer queues. |
-| **Battery Drain from Active Equalizer** | Low | Medium | Vectorize biquad filter loops; bypass DSP blocks when equalizer is toggled Off or set to Flat. |
+---
+
+## 5. Items Requiring Professional Legal Review
+
+Before publishing or commercializing the application, professional legal counsel should review:
+1. **Audio Codec Patent Licensing**: Certain legacy audio codecs (e.g., MP3/AAC) have expired patents in most jurisdictions, but specialized formats (e.g., Dolby AC-4, MPEG-H) may carry patent pool obligations (Via Licensing / MPEG LA) if custom software decoders are bundled instead of using Android OS system decoders.
+2. **LGPL Dynamic Linking Verification**: Independent verification that dynamically linking `libffmpeg.so` on Android (via JNI) fully satisfies LGPL v2.1 requirements in target distribution markets.
+3. **Trademark & Trade Dress Clearing**: Formal trademark search for the selected application name and logo icon.

@@ -82,7 +82,55 @@ graph TD
 
 ---
 
-## 4. Audio Playback Pipeline Architecture
+## 4. Evaluation of Three Independent Audio Architectures
+
+In compliance with Phase 1.1 architectural validation, we rigorously evaluate three candidate architectures:
+- **Architecture A**: Media3-First (Standard AndroidX Media3 / ExoPlayer with default AudioSink and framework `AudioEffect`).
+- **Architecture B (Recommended)**: Hybrid — Media3 Decoding with Custom 32-bit Float DSP Pipeline and High-Res AudioTrack Output.
+- **Architecture C**: Fully Custom Native Audio Pipeline (C++ / Oboe / AAudio / FFmpeg via JNI).
+
+### Deep Trade-Off Comparison Matrix
+
+| Evaluation Dimension | Architecture A (Media3-First) | Architecture B (Hybrid Float DSP) | Architecture C (Native C++ / Oboe) |
+| :--- | :--- | :--- | :--- |
+| **Codec Support** | Standard Android codecs (MP3, AAC, FLAC, Opus) | Wide: System codecs + FFmpeg extension (APE, ALAC, DSD, WavPack) | Maximum: Custom-compiled FFmpeg NDK decoders |
+| **PCM Formats** | 16-bit signed integer PCM | **32-bit float PCM (`ENCODING_PCM_FLOAT`)** | 32/64-bit float native audio ring buffers |
+| **Sample-Rate Handling** | Fixed OS resampling (usually 48kHz via AudioFlinger) | Preserves source rate (44.1–192kHz) where hardware permits | Native rate selection up to 384kHz via AAudio exclusive |
+| **AudioTrack Behavior** | Standard `DefaultAudioSink` | Custom `AudioSink` with float output & direct flags | Bypasses Java AudioTrack; direct AAudio/OpenSL |
+| **USB DAC Compatibility** | Standard OS USB class driver | Direct routing via `AudioDeviceInfo.TYPE_USB_DEVICE` | Custom USB Host asynchronous packet streaming |
+| **Audio Focus** | Built-in, fully automated by Media3 | Built-in, integrated with Media3 session | Manual implementation via JNI callbacks |
+| **Gapless Playback** | Built-in ExoPlayer gapless for MP3/FLAC/Opus | Built-in with custom padding/delay trim | Manual dual-decoder buffer pre-roll in C++ |
+| **Crossfade** | Not supported out-of-the-box | Clean dual-buffer mixing via custom `AudioProcessor` | Custom C++ mixing loop with linear/equal-power curve |
+| **EQ Processing** | Limited framework `AudioEffect` (5-10 fixed bands) | **Full 10-32 band graphic & parametric Biquad IIR chain** | Custom C++ SIMD NEON biquad filter chain |
+| **Internal Headroom** | None (16-bit clips at 0 dBFS) | **>1500 dB digital headroom (IEEE 754 float)** | >1500 dB digital headroom |
+| **Audio Latency** | Medium (50–100ms) | Low to Medium (20–40ms) | Lowest (<10ms via AAudio exclusive mode) |
+| **Battery Usage** | Lowest (Hardware DSP offloading when available) | Very Low (Optimized Kotlin/SIMD DSP math) | Moderate (Continuous native CPU wake during DSP) |
+| **Device Compatibility**| 100% (Android API 21 through 35) | **99.5% (Float AudioTrack supported since API 21)** | Fragile across vendor Android forks (OEM HAL quirks) |
+| **Development Complexity**| Lowest | **Moderate (Clean separation of concerns, testable)** | Extremely High (NDK, C++ ABI builds, memory hazards) |
+| **Licensing Risks** | None (Apache 2.0) | **Zero proprietary risk (Apache 2.0 / MIT)** | LGPL 2.1 compliance management for FFmpeg |
+
+---
+
+### Critical Technical Distinctions
+
+> [!WARNING]
+> **Float PCM vs. Bit-Perfect Output**:
+> 32-bit floating-point PCM (`AudioFormat.ENCODING_PCM_FLOAT`) eliminates digital clipping and rounding distortion during DSP equalization, providing immense dynamic headroom. However, **Float PCM is NOT identical to bit-perfect output**. Bit-perfect reproduction means the digital samples delivered to the DAC are mathematically identical to the source file without resampling or volume scaling. If the Android system mixer (`AudioFlinger`) or device kernel resamples 44.1kHz audio to 48kHz, the stream is no longer bit-perfect even if delivered in 32-bit float.
+
+> [!IMPORTANT]
+> **DAC Hardware Sample Rate Realities**:
+> Not all USB DACs or internal smartphone DACs support arbitrary sample rates (e.g. 88.2kHz or 384kHz). An audiophile audio player must query the device's supported sample rates via `AudioDeviceInfo.getSampleRates()` and negotiate the closest integer-multiple clock (e.g. 44.1kHz -> 88.2kHz -> 176.4kHz; 48kHz -> 96kHz -> 192kHz) to avoid harmonic interpolation distortion.
+
+### Recommended Architectural Strategy: Architecture B
+Architecture B strikes the ideal balance between audiophile audio reproduction, maintainability, and clean-room independence:
+1. Leverage AndroidX Media3 for rock-solid decoding, media session management, audio focus, and background notification controls.
+2. Intercept the audio pipeline at the `AudioProcessor` / `AudioSink` boundary to convert samples to 32-bit float PCM.
+3. Apply our independent Robert Bristow-Johnson Biquad parametric equalizer, bass/treble tone controls, stereo balance, and soft limiter.
+4. Output to `AudioTrack` configured with `AudioFormat.ENCODING_PCM_FLOAT`, querying `AudioDeviceInfo` to match native DAC hardware clock rates.
+
+---
+
+## 5. Audio Playback Pipeline Architecture (Architecture B)
 
 ```mermaid
 flowchart LR
@@ -98,69 +146,58 @@ flowchart LR
     end
 
     AudioSink --> Preamp
-    Limiter --> OutputRoute{Output Routing}
-    OutputRoute -->|Internal DAC| AT[AudioTrack PCM Float 32-bit]
-    OutputRoute -->|External USB| USB[Direct USB DAC Host Mode]
-    OutputRoute -->|Chromecast| Cast[Media3 Cast Extension]
+    Limiter --> SinkOut[AudioTrack PCM Float Output]
+    SinkOut --> DAC[Device DAC / USB Interface]
 ```
 
-### Digital Filter Mathematics (Parametric EQ)
-Each band of the parametric equalizer is evaluated as a standard second-order direct-form II transposed biquad IIR digital filter:
+### Digital Biquad Filter Mathematics
+Every band in our 10-32 band graphic and parametric equalizer uses standard second-order IIR biquad transfer functions:
 
 $$H(z) = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{a_0 + a_1 z^{-1} + a_2 z^{-2}}$$
 
-The filter coefficients ($b_0, b_1, b_2, a_0, a_1, a_2$) are computed in clean-room Kotlin using the standard Robert Bristow-Johnson Audio EQ Cookbook algorithms parameterized by:
-- $F_s$: Current audio sample rate (e.g. 44,100 Hz, 48,000 Hz, 96,000 Hz, 192,000 Hz).
-- $f_0$: Center frequency in Hz (20 Hz to 20,000 Hz).
-- $Q$: Quality factor (0.1 to 12.0).
-- $dBgain$: Gain in decibels (-15.0 dB to +15.0 dB).
+#### Peaking EQ Filter Equations (Robert Bristow-Johnson Cookbook)
+Given center frequency $f_0$, sample rate $f_s$, gain in dB $A = 10^{\text{gain}/40}$, and quality factor $Q$:
+
+$$\omega_0 = 2\pi \frac{f_0}{f_s}, \quad \alpha = \frac{\sin(\omega_0)}{2Q}$$
+
+$$b_0 = 1 + \alpha A, \quad b_1 = -2\cos(\omega_0), \quad b_2 = 1 - \alpha A$$
+$$a_0 = 1 + \frac{\alpha}{A}, \quad a_1 = -2\cos(\omega_0), \quad a_2 = 1 - \frac{\alpha}{A}$$
+
+All coefficients are normalized by dividing by $a_0$. Filtering is computed in Direct Form II Transposed for numerical stability.
 
 ---
 
-## 5. Relational Database Schema Proposal (Room)
+## 6. Relational Database Schema (Room)
 
 ```mermaid
 erDiagram
-    TRACK ||--o{ PLAYLIST_ENTRY : contains
-    PLAYLIST ||--o{ PLAYLIST_ENTRY : holds
-    ALBUM ||--o{ TRACK : groups
-    ARTIST ||--o{ TRACK_ARTIST : associates
-    TRACK ||--o{ TRACK_ARTIST : associates
-    FOLDER ||--o{ TRACK : stores
-    TRACK ||--o| LYRICS : has
-    TRACK ||--o{ BOOKMARK : marks
-    OUTPUT_DEVICE ||--o{ EQ_PRESET_BINDING : binds
-    EQ_PRESET ||--o{ EQ_PRESET_BINDING : provides
-    EQ_PRESET ||--o{ EQ_BAND : contains
+    TRACK ||--o{ PLAYLIST_ENTRY : "contains"
+    PLAYLIST ||--o{ PLAYLIST_ENTRY : "has"
+    ALBUM ||--o{ TRACK : "contains"
+    ARTIST ||--o{ TRACK : "performs"
+    FOLDER ||--o{ TRACK : "stores"
+    TRACK ||--o{ BOOKMARK : "has"
+    TRACK ||--o{ CACHED_LYRICS : "matches"
 
     TRACK {
         long id PK
-        string uri
         string title
-        string titleSort
-        long albumId FK
-        int trackNumber
-        int discNumber
+        string path
         long durationMs
-        long sizeBytes
-        long dateAddedSec
-        long dateModifiedSec
-        string mimeType
-        int sampleRate
-        int bitDepth
-        int bitrateKbps
-        string codec
-        long playCount
-        long lastPlayedMs
+        int trackNumber
+        int year
+        long albumId FK
+        long artistId FK
+        long folderId FK
+        int playCount
+        long lastPlayedTimestamp
         boolean isFavorite
-        long bookmarkOffsetMs
-        string waveformData
+        byte[] waveformPeaks
     }
 
     ALBUM {
         long id PK
         string title
-        string titleSort
         string artistName
         int year
         int trackCount
@@ -170,17 +207,8 @@ erDiagram
     ARTIST {
         long id PK
         string name
-        string nameSort
-        int albumCount
         int trackCount
-    }
-
-    FOLDER {
-        long id PK
-        string path
-        string name
-        long parentFolderId
-        int songCount
+        int albumCount
     }
 
     PLAYLIST {
@@ -188,77 +216,29 @@ erDiagram
         string name
         long createdAt
         long updatedAt
-        int songCount
-        long totalDurationMs
+        int trackCount
     }
 
-    EQ_PRESET {
+    PLAYLIST_ENTRY {
         long id PK
-        string name
-        boolean isParametric
-        float preampGainDb
-        boolean isBuiltIn
+        long playlistId FK
+        long trackId FK
+        int sortOrder
     }
 
-    EQ_BAND {
+    BOOKMARK {
         long id PK
-        long presetId FK
-        int filterType
-        float frequencyHz
-        float qFactor
-        float gainDb
-        int channelMode
+        long trackId FK
+        long offsetMs
+        string note
+        long createdAt
+    }
+
+    CACHED_LYRICS {
+        long id PK
+        long trackId FK
+        string content
+        string source
+        long updatedAt
     }
 ```
-
----
-
-## 6. Background Playback & Lifecycle Service
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant System as Android OS / System
-    participant Service as PlaybackService (MediaSessionService)
-    participant Session as MediaSession
-    participant Player as ExoPlayer Instance
-    participant Notif as MediaNotificationManager
-
-    System->>Service: onCreate()
-    Service->>Player: Instantiate ExoPlayer with custom AudioSink
-    Service->>Session: MediaSession.Builder(this, Player).build()
-    Service->>Notif: Initialize MediaStyle Notification Provider
-
-    Note over Service,Player: User initiates playback
-    Service->>Service: startForeground(NOTIFICATION_ID, notification)
-    Player->>Player: Transition to STATE_READY & playWhenReady = true
-    Service->>System: Register HeadsetPlugReceiver & AudioDeviceCallback
-
-    Note over Service,System: Headset unplugged / BT disconnected
-    System->>Service: onAudioDevicesRemoved() / ACTION_AUDIO_BECOMING_NOISY
-    Service->>Player: pause()
-    Service->>Notif: Update notification to Paused state
-```
-
----
-
-## 7. Media Ingestion & Scanner Architecture
-
-1. **MediaStore Observer**:
-   - `ContentObserver` registers on `MediaStore.Audio.Media.EXTERNAL_CONTENT_URI`.
-   - Incremental diffing: Detects newly added or deleted files instantly without walking the storage tree.
-2. **SAF / WorkManager Direct Scanner**:
-   - For user-selected folders on SD cards or internal directories, a periodic or on-demand `CoroutineWorker` scans files.
-   - Extracts embedded tags via lightweight ID3/Vorbis reader.
-   - Discovers adjacent `.lrc` and `.cue` files.
-   - Generates and stores 100-point RMS waveform arrays for the visual seekbar.
-
----
-
-## 8. Battery & Performance Optimization Strategy
-
-1. **Audio Decoding Offload**: Utilize platform hardware decoders via MediaCodec where supported to minimize CPU wake time.
-2. **Zero Polling in Service Loop**: All state changes propagate reactively via Kotlin `StateFlow` and `SharedFlow`.
-3. **Lazy UI Rendering**: Jetpack Compose `LazyColumn` and `LazyVerticalGrid` recycling memory for libraries with 10,000+ tracks.
-4. **Artwork Memory & Disk Caching**: Coil 3-tier cache (Bitmap Memory Cache -> Disk File Cache -> Raw Audio Extraction) prevents repetitive decoding of embedded JPEG/PNG tags.
-5. **WakeLock Discipline**: Acquire `PARTIAL_WAKE_LOCK` strictly when `playWhenReady == true` and release immediately when paused.

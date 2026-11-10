@@ -37,6 +37,7 @@ All detailed engineering and forensic reports are located in the [`research/`](r
 | **[12](research/12-RISK-AND-LICENSING.md)** | **Risk & Licensing Analysis** | Clean-room copyright boundaries, LGPL 2.1 compliance (FFmpeg), and Play Store policies. |
 | **[13](research/13-IMPLEMENTATION-ROADMAP.md)** | **Implementation Roadmap** | Six-phase execution roadmap from UI scaffolding to production store release. |
 | **[14](research/14-EVIDENCE-MATRIX.md)** | **Evidence Traceability Matrix** | Traceability matrix linking every feature to evidence logs, confidence ratings, and test cases. |
+| **[15](research/15-FEATURE-AUDIT-VALIDATION.md)** | **Feature Audit & Hardening** | Four-dimensional audit (Declaration, Implementation, Execution, Outcome) across all 70 features. |
 
 ---
 
