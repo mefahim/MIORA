@@ -95,11 +95,13 @@ Target Application Core Subsystems:
 - **Classes**: `com.maxmpz.audioplayer.processing.Pipeline2`, `libpowerampcore.so`
 - **Evidence References**: `Pipeline2.java`, JNI exports
 - **Observed Bytecode**:
-  - High-precision audio processing occurs exclusively in floating-point format:
-    $$\text{Dynamic Headroom} \approx 1500\text{ dB (IEEE 754 float dynamic range)}$$
+  - High-precision audio processing occurs in floating-point format:
+    - Intermediate filter coefficient calculations in `Coefs.java` utilize 64-bit IEEE 754 double-precision (`double[][] outCoefs`), providing 53-bit mantissa precision (~318 dB mathematical SNR).
+    - Audio PCM sample streaming buffers utilize 32-bit single-precision float (`float`), providing 24-bit mantissa resolution (~144 dB instantaneous linear dynamic range) with an exponent dynamic range spanning $>1500$ dB numerically (between $10^{-38}$ and $10^{38}$).
+    - **Engineering Qualification on Headroom**: This numerical dynamic span provides scale-invariant intermediate arithmetic, preventing digital clipping and accumulation overflow during multi-band parametric EQ boosts or digital preamp gain scaling. However, it does not represent usable acoustic dynamic range; final output fidelity remains constrained by hardware DAC analog noise floors (typically 100–125 dB SNR) and physical bit depth.
   - Volume attenuation, preamp gain, equalizer biquads, tone shelving, spatializer, and reverb are applied sequentially in a single native audio callback thread before final dithering/quantization to hardware output depth.
   - `native_route_msg` uses a lock-free ring buffer to enqueue parameter updates (such as EQ slider adjustments) without blocking the realtime audio thread.
-- **Inferred vs Observed**: Message routing and DSP thread decoupling are observed; internal SIMD vectorization routines (ARM NEON instructions) are contained in the native binary.
+- **Inferred vs Observed**: Message routing and DSP thread decoupling are observed in bytecode/JNI; internal SIMD vectorization routines (ARM NEON instructions) are located in the native binary.
 - **Clean-Room Implementation**: Custom `AudioProcessor` in Media3 or C++ Oboe callback utilizing 32-bit float PCM buffers.
 
 ---
@@ -116,7 +118,7 @@ Target Application Core Subsystems:
     - `channels`: 0 (Stereo), 1 (Left), 2 (Right)
   - `Coefs.native_calc_bands_coefs(int sampleRate, Band[] bands, double[][] outCoefs)` evaluates the transfer function:
     $$H(z) = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{a_0 + a_1 z^{-1} + a_2 z^{-2}}$$
-- **Inferred vs Observed**: All parameter ranges, types, and coefficient arrays are directly observed in decompiled classes; calculations match Robert Bristow-Johnson's Audio EQ Cookbook.
+- **Inferred vs Observed**: All parameter ranges, types, and coefficient arrays are directly observed in decompiled classes; calculations match Robert Bristow-Johnson's Audio EQ Cookbook. Filter state computation in 64-bit double precision is confirmed by the `double[][]` JNI argument.
 - **Clean-Room Implementation**: Pure Kotlin or C++ implementation of Robert Bristow-Johnson biquad formulas with linear frequency response curve plotting in Compose Canvas.
 
 ---
@@ -128,10 +130,10 @@ Target Application Core Subsystems:
   - Audio output is modularized into plugin services.
   - When Android HAL supports high-resolution audio, `AthdPluginService` configures `AudioTrack` with:
     - `AudioFormat.ENCODING_PCM_FLOAT`
-    - Native sample rates: 44.1, 48, 88.2, 96, 176.4, 192, 384 kHz
+    - Supported sample rates: 44.1, 48, 88.2, 96, 176.4, 192, 384 kHz
     - Audio attributes: `AudioAttributes.USAGE_MEDIA`, `AudioAttributes.CONTENT_TYPE_MUSIC`
-  - Bypasses Android's default 16-bit integer software resampler when direct output flags are permitted by the device audio policy.
-- **Inferred vs Observed**: Plugin service declarations and AudioTrack parameters observed in bytecode; device-specific audio policy bypass is hardware-dependent.
+  - Requests direct output flags (`AUDIO_OUTPUT_FLAG_DIRECT`, `FLAG_RAW`) to bypass Android's default 16-bit integer fixed 48kHz resampling in `AudioFlinger`, when permitted by the device audio policy and hardware HAL.
+- **Inferred vs Observed**: Plugin service declarations and AudioTrack parameters observed in bytecode; actual device-specific AudioFlinger bypass and bit-perfect playback depend on OEM kernel/HAL audio policy rules.
 - **Clean-Room Implementation**: Configure `AudioTrack.Builder().setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_FLOAT)...)` in AndroidX Media3.
 
 ---

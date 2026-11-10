@@ -63,6 +63,6 @@ sequenceDiagram
 
 ## 5. Clean-Room Strategy for Independent Application
 
-1. **No Artificial Paywalls on Audio Fidelity**: All audiophile features (Parametric EQ, 32-bit Float AudioTrack, Bit-Perfect USB DAC mode, ReplayGain, Crossfade) should be permanently available to users by default.
+1. **No Artificial Paywalls on Audio Fidelity**: All audiophile features (Parametric EQ, 32-bit Float AudioTrack, USB DAC bit-perfect pass-through, ReplayGain, Crossfade) should be permanently available to users by default.
 2. **Open-Source Friendly**: Eliminating proprietary licensing servers and anti-piracy checks simplifies codebase architecture, reduces battery consumption, and removes network dependencies.
 3. **Monetization Option (If Commercialized)**: Standard Google Play one-time In-App Purchase (IAP) using Google Play Billing Library 7.x, with no shared-UID dependencies or external unlocker APKs.

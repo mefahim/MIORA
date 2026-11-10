@@ -13,32 +13,53 @@ In accordance with international software copyright laws (including Section 1201
 
 ## 2. Open Source Licensing & Build Configuration Audit
 
-### A. FFmpeg Licensing & Build Strategy
-- **Role in Project**: Decoding audiophile formats (FLAC, ALAC, Opus, APE, WavPack, DSD).
-- **License**: **LGPL v2.1+** (or GPL v2+/v3+ depending on build flags).
-- **Required Build Configuration**:
-  To prevent "GPL viral infection" of the application codebase, FFmpeg MUST be compiled strictly under LGPL v2.1:
-  ```bash
-  ./configure \
-    --enable-cross-compile \
-    --target-os=android \
-    --arch=arm64 \
-    --disable-gpl \
-    --disable-nonfree \
-    --disable-version3 \
-    --enable-shared \
-    --disable-static \
-    --enable-small \
-    --disable-programs \
-    --disable-doc \
-    --disable-everything \
-    --enable-decoder=flac,alac,ape,opus,vorbis,wavpack,mp3,aac \
-    --enable-demuxer=flac,mov,ape,ogg,wavpack,mp3,aac
-  ```
-- **Compliance Obligations**:
-  - Build FFmpeg as dynamically linked shared libraries (`libffmpeg.so`, `libavcodec.so`, etc.).
-  - Comply with LGPL v2.1 Section 6 by providing build scripts and source tarballs enabling end-users to recompile and replace the `.so` binaries.
-  - Do NOT statically link FFmpeg into the application executable.
+## 2. Open Source Licensing & FFmpeg Compliance Audit
+
+### A. FFmpeg Licensing, Evidence & Distribution Obligations
+*(References: Official FFmpeg Legal Guidelines — https://www.ffmpeg.org/legal.html)*
+
+#### 1. Forensic Evidence in Target APK
+- **Analyzed Artifact**: `lib/arm64-v8a/libffmpeg_neon.so` (2,220,424 bytes, ELF 64-bit LSB dynamic shared object).
+- **Dynamic Library Dependencies (`readelf -d`)**: `libm.so`, `liblog.so`, `libz.so`, `libc.so`, `libdl.so`.
+- **Exported Core Symbols**: `avcodec_alloc_context3`, `avformat_open_input`, along with specialized demuxers (`ff_aac_demuxer`, `ff_dsf_demuxer`, `ff_mpc_demuxer`, `ff_matroska_demuxer`, `ff_pcm_*_demuxer`).
+- **Packaging Topology**: Monolithic shared object combining stripped audio-focused demuxers and decoders (`libavcodec`, `libavformat`, `libavutil`) into a single binary.
+
+#### 2. Legal Realities: Why Build Flags Alone Do Not Guarantee Compliance
+> [!CAUTION]
+> It is an engineering misconception that merely specifying `--disable-gpl` and `--disable-nonfree` during compilation, and dynamically linking a shared library (`.so`), automatically guarantees full legal compliance.
+> Under official FFmpeg licensing rules and the LGPL v2.1, compliance requires fulfilling continuous operational and distribution obligations.
+
+#### 3. Specific Compliance Obligations & Risk Factors
+
+| Obligation / Risk Area | Specific Requirement under LGPL v2.1 | Implementation & Verification Action |
+| :--- | :--- | :--- |
+| **GPL Component Contamination** | Must not include GPL-licensed FFmpeg modules (e.g., `postproc`, `swscale` filters using GPL code, `libx264`, `libx265`, `frei0r`). | Configure with `--disable-gpl --disable-version3`. Audit all enabled decoders/demuxers against FFmpeg's GPL component catalog. |
+| **Non-Free Library Exclusion** | Must not link against unredistributable or non-free libraries (e.g., Fraunhofer `fdk-aac`, non-free crypto). | Audit dynamic symbols with `readelf -d` and `nm` to confirm zero non-free external symbols. Rely on LGPL-permissive internal decoders (e.g., native FFmpeg AAC decoder). |
+| **External Dependency Chaining** | Dynamic dependencies (`libz.so`, `libc.so`, `libm.so`) must remain strictly under permissive or system licenses. | Dynamic section audit confirms target APK links only against Android system Bionic libc/libm/libdl/libz. |
+| **Corresponding Source Code Delivery** | LGPL v2.1 Section 6 requires distributors to provide the exact matching source code, including all modifications, patches, configure flags, and build scripts. | Host the complete corresponding source tree and exact compilation container/Dockerfile on the project repository's public release page. |
+| **User Relinking & Replacement** | The end-user must be technically and legally capable of replacing the LGPL library with a modified version and running the app. | The application must load FFmpeg as a distinct shared library (`libffmpeg.so`) via `System.loadLibrary()`, preserving binary interface (ABI) stability. Document the procedure for users to replace the `.so` via rooted adb or repackaging. |
+| **Patent Pool Licensing (MPEG LA / Via)** | Copyright licenses (LGPL/GPL) grant rights under copyright law, but **do NOT grant patent indemnification**. Standard audio codecs (AAC, MP3) involve patent pools in certain jurisdictions. | **Item requiring professional legal review**: Evaluate whether software-decoding AAC via FFmpeg requires patent pool royalties in target markets, or whether relying on Android platform `MediaCodec` for patented formats eliminates this liability. |
+
+#### 4. Baseline LGPL v2.1 Build Configuration Blueprint
+```bash
+./configure \
+  --enable-cross-compile \
+  --target-os=android \
+  --arch=arm64 \
+  --disable-gpl \
+  --disable-nonfree \
+  --disable-version3 \
+  --enable-shared \
+  --disable-static \
+  --disable-programs \
+  --disable-doc \
+  --disable-everything \
+  --enable-decoder=flac,alac,ape,opus,vorbis,wavpack,mp3,aac \
+  --enable-demuxer=flac,mov,ape,ogg,wavpack,mp3,aac \
+  --enable-parser=flac,opus,vorbis,mpegaudio,aac
+```
+
+---
 
 ### B. projectM Visualizer Licensing
 - **Role in Project**: OpenGL Milkdrop visualizer engine.

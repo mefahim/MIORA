@@ -11,7 +11,7 @@ This repository contains the complete **Phase 1 Deep Reverse-Engineering Researc
 The goal of Phase 1 was to investigate the technical implementation details of advanced Android music players (specifically Poweramp build-1035), audit all 70 core features, and design a modern, clean-room native Android architecture using Kotlin, Jetpack Compose, AndroidX Media3, and custom DSP pipelines.
 
 - **Executive Summary**: [PHASE-1-FINAL-REPORT.md](PHASE-1-FINAL-REPORT.md)
-- **Investigation Matrix**: 70 Features Audited (69 `VERIFIED_STATIC`, 1 `INFERRED`, 0 Unknowns)
+- **Investigation Matrix**: 70 Features Audited (13 `STATIC_IMPLEMENTATION_CONFIRMED`, 55 `IMPLEMENTED_BUT_RUNTIME_UNVERIFIED`, 1 `PARTIALLY_IMPLEMENTED`, 1 `INFERRED`, 0 `RUNTIME_VERIFIED`)
 - **Compliance**: 100% Clean-Room design without reusing proprietary binary code or copyrighted assets.
 
 ---
@@ -38,6 +38,7 @@ All detailed engineering and forensic reports are located in the [`research/`](r
 | **[13](research/13-IMPLEMENTATION-ROADMAP.md)** | **Implementation Roadmap** | Six-phase execution roadmap from UI scaffolding to production store release. |
 | **[14](research/14-EVIDENCE-MATRIX.md)** | **Evidence Traceability Matrix** | Traceability matrix linking every feature to evidence logs, confidence ratings, and test cases. |
 | **[15](research/15-FEATURE-AUDIT-VALIDATION.md)** | **Feature Audit & Hardening** | Four-dimensional audit (Declaration, Implementation, Execution, Outcome) across all 70 features. |
+| **[16](research/16-QA-CORRECTION-LOG.md)** | **QA & Consistency Log** | Final Phase 1.2 QA corrections, audio claim qualifications, and FFmpeg compliance audit. |
 
 ---
 

@@ -39,7 +39,7 @@
 ```
 
 - **OpenGL ES 2.0 (`0x20000`)**: Required for Milkdrop visualization rendering, custom UI shaders, and waveform hardware acceleration.
-- **USB Host (`android.hardware.usb.host`)**: Required for USB DAC OTG direct bit-perfect audio streaming.
+- **USB Host (`android.hardware.usb.host`)**: Enables direct USB DAC OTG audio streaming and hardware endpoint communication.
 - **Touchscreen Optional**: Allows installation on Android TV, automotive heads-up displays, and dedicated digital audio players (DAPs) with hardware button navigation.
 
 ---
@@ -159,7 +159,7 @@ Two native libraries are present across two ARM architectures:
 | Library Path | Architecture | File Size | Identified Role |
 | :--- | :--- | :--- | :--- |
 | `lib/arm64-v8a/libffmpeg_neon.so` | ARM 64-bit | 2,220,424 B | Custom NEON-optimized FFmpeg decoding engine |
-| `lib/arm64-v8a/libpowerampcore.so` | ARM 64-bit | 4,630,560 B | Custom 64-bit float DSP core, EQ, DVC, resamplers, Milkdrop OpenGL |
+| `lib/arm64-v8a/libpowerampcore.so` | ARM 64-bit | 4,630,560 B | Floating-point DSP core (64-bit double filter coefficients, float PCM buffers, DVC, resamplers, Milkdrop OpenGL) |
 | `lib/armeabi-v7a/libffmpeg_neon.so` | ARM 32-bit | 2,486,096 B | 32-bit ARM fallback for legacy devices |
 | `lib/armeabi-v7a/libpowerampcore.so` | ARM 32-bit | 3,731,760 B | 32-bit ARM fallback for legacy devices |
 

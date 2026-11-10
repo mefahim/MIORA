@@ -7,7 +7,7 @@ To build the premier **clean-room, open-architecture, audiophile-grade native An
 
 ## 2. Target Audience & Personas
 
-1. **The Audiophile**: Demands bit-perfect output, Hi-Res audio (up to 24-bit/192kHz PCM & DSD), custom Parametric EQ, AutoEq profile matching, and USB DAC exclusive mode.
+1. **The Audiophile**: Demands high-fidelity reproduction, Hi-Res audio (up to 24-bit/192kHz PCM & DSD), custom Parametric EQ, AutoEq profile matching, and USB DAC bit-perfect pass-through mode (when DSP effects are bypassed).
 2. **The Offline Music Collector**: Maintains personal collections of FLAC, ALAC, MP3, and CUE albums on high-capacity SD cards; requires folder hierarchy browsing, tag editing, and embedded artwork support.
 3. **The Daily Commuter / Driver**: Requires seamless Bluetooth auto-resume, Android Auto integration, lock screen controls, and Quick Settings tile access.
 4. **The Lyric Enthusiast**: Enjoys karaoke-style time-synchronized lyrics with fine-tuned millisecond offset adjustment.
@@ -64,7 +64,7 @@ journey
 
 ### Could Have (P2 — Pro Enhancements)
 - AutoEq database integration for one-tap headphone frequency compensation.
-- Direct USB DAC host mode with exclusive bit-perfect streaming.
+- Direct USB DAC host mode with exclusive bit-perfect pass-through streaming (when DSP effects are bypassed).
 - Real-time OpenGL audio spectrum visualizer.
 - Custom preset binding to specific Bluetooth devices / wired outputs.
 - Sleep timer with gentle volume fade-out.

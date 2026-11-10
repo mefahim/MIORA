@@ -98,7 +98,7 @@ All 12 prioritized subsystems are reverse-engineered and documented in [`researc
 2. **PlayerServiceCore**: Central state machine implementing `OnAudioFocusChangeListener`, `MsgBus`, and `StateBus`.
 3. **Pipeline2 JNI Bridge**: Lock-free control gateway exposing native transport methods and C++ audio callbacks.
 4. **Audio Decoding**: FFmpeg NEON decoders in `libffmpeg_neon.so` converting streams into uncompressed float PCM buffers.
-5. **Native DSP Invocation**: 64-bit floating-point processing loop in `libpowerampcore.so` providing >1500 dB digital headroom.
+5. **Native DSP Invocation**: Floating-point processing loop in `libpowerampcore.so` (64-bit double filter coefficients and 32-bit float PCM buffers providing scale-invariant intermediate arithmetic to prevent digital clipping).
 6. **Equalizer & Biquad Mathematics**: `Band.java` and `Coefs.java` evaluating Robert Bristow-Johnson Audio EQ Cookbook IIR transfer functions.
 7. **AudioTrack / AAudio Output**: `AthdPluginService.java` routing 32-bit float PCM (`AudioFormat.ENCODING_PCM_FLOAT`) up to 384kHz.
 8. **MediaSession & Notification**: `MediaSessionCompat` synchronizing transport actions, lock screen metadata, and MediaStyle notification.
@@ -131,7 +131,7 @@ Evaluated in detail in [`research/10-INDEPENDENT-ARCHITECTURE.md`](research/10-I
 
 ## 10. Licensing, Privacy & Security Risks
 Documented in [`research/12-RISK-AND-LICENSING.md`](research/12-RISK-AND-LICENSING.md):
-1. **FFmpeg Compliance**: Must be compiled under **LGPL v2.1** (`--disable-gpl`, `--disable-nonfree`) and dynamically linked as `.so` libraries to comply with LGPL Section 6.
+1. **FFmpeg Compliance**: Must be compiled strictly under **LGPL v2.1** with dynamic linking, zero GPL/non-free dependency contamination, full corresponding source distribution, and user replacement mechanisms per LGPL Section 6.
 2. **Storage Permission Policy**: Poweramp's request for `MANAGE_EXTERNAL_STORAGE` is rejected by Google Play for music players. Our independent implementation uses Android 13+ `READ_MEDIA_AUDIO` + Storage Access Framework (SAF) `ACTION_OPEN_DOCUMENT_TREE` for recursive directory access.
 3. **Privacy Assurance**: 100% offline-first architecture with zero third-party telemetry, trackers, or advertising SDKs.
 4. **Items for Professional Legal Review**: Jurisdictional review of audio codec patent pools and trademark clearance for the new application brand identity.

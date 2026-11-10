@@ -29,13 +29,13 @@ Original Poweramp Stack               Proposed Modern Clean-Room Stack
 
 ### A. Audio Engine & Signal Processing
 - **Engine Core**: Fully custom native C++ engine compiled into `libpowerampcore.so`.
-- **Bit Depth / Precision**: 64-bit double-precision IEEE floating-point internal DSP pipeline.
+- **Bit Depth / Precision**: Double-precision (64-bit `double`) coefficient calculation (`Coefs.java`) and floating-point PCM sample buffers in native DSP core.
 - **Audio Output Plugins**:
   - `AaPluginService`: AAudio (Android NDK low-latency audio API).
   - `AtPluginService`: Standard Java `AudioTrack` output.
-  - `AthdPluginService`: AudioTrack Hi-Res (Direct PCM output bypassing Android AudioFlinger on Qualcomm Snapdragon, Sony Walkman, LG Quad-DAC, and Samsung Exynos chips).
+  - `AthdPluginService`: AudioTrack Hi-Res (Direct PCM output requesting direct output flags to bypass standard AudioFlinger 48kHz resampling on supported Qualcomm, Sony, and LG hardware).
   - `OslPluginService`: OpenSL ES native output.
-  - `UsbxPluginService`: USB Audio exclusive host mode with bit-perfect PCM/DSD output bypassing OS resamplers.
+  - `UsbxPluginService`: USB Audio host mode intended for direct PCM/DSD output to external USB DACs bypassing OS mixer resampling.
   - `CcPluginService`: Google Cast / Chromecast audio streaming.
 - **Decoding Pipeline**:
   - `libffmpeg_neon.so`: Custom build of FFmpeg with ARM NEON SIMD optimizations for decoding MP3, AAC, FLAC, ALAC, APE, OPUS, OGG Vorbis, WavPack, Musepack, and DSD (DSF/DFF).
@@ -84,7 +84,7 @@ To build a clean-room, maintainable, modern, high-performance music player witho
     - Low-latency callback model with NEON-accelerated floating-point DSP pipeline.
 - **Audio Effects**:
   - Android standard `android.media.audiofx.Equalizer`, `BassBoost`, `Virtualizer`, `EnvironmentalReverb`, and `LoudnessEnhancer`.
-  - Independent Custom Software Equalizer: Clean-room 10-band / 30-band Biquad IIR filter implementation (using Robert Bristow-Johnson Audio EQ Cookbook equations) running in pure Kotlin / C++ for bit-perfect equalization without Android system audio effect limitations.
+  - Independent Custom Software Equalizer: Clean-room 10-band / 30-band Biquad IIR filter implementation (using Robert Bristow-Johnson Audio EQ Cookbook equations) running in pure Kotlin / C++ for high-precision floating-point equalization without Android system audio effect limitations.
 
 ### C. UI & Visual Design System
 - **Framework**: **Jetpack Compose + Material 3 (Material You)**:

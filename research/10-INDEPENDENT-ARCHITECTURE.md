@@ -4,7 +4,7 @@
 The goal of this architecture is to design a high-fidelity, production-grade, independently maintainable Android native music player. The architecture adheres to:
 1. **Clean-Room Engineering**: Completely zero reliance on proprietary code, reverse-engineered binaries, or unlicensed assets.
 2. **Modern Android Standards**: 100% Kotlin, Jetpack Compose, AndroidX Media3, Room, Hilt, and Coroutines/Flow.
-3. **Audiophile-Grade Audio Reproduction**: 32-bit floating-point PCM audio pipeline, low-latency playback, custom Parametric EQ, gapless playback, and bit-perfect DAC output.
+3. **Audiophile-Grade Audio Reproduction**: 32-bit floating-point PCM audio pipeline, low-latency playback, custom Parametric EQ, gapless playback, and bit-perfect pass-through mode for external USB DACs (when DSP effects are bypassed).
 4. **Offline-First & Privacy-Centric**: Zero mandatory network calls, no analytics trackers, no advertising SDKs, full local database autonomy.
 
 ---
@@ -102,7 +102,7 @@ In compliance with Phase 1.1 architectural validation, we rigorously evaluate th
 | **Gapless Playback** | Built-in ExoPlayer gapless for MP3/FLAC/Opus | Built-in with custom padding/delay trim | Manual dual-decoder buffer pre-roll in C++ |
 | **Crossfade** | Not supported out-of-the-box | Clean dual-buffer mixing via custom `AudioProcessor` | Custom C++ mixing loop with linear/equal-power curve |
 | **EQ Processing** | Limited framework `AudioEffect` (5-10 fixed bands) | **Full 10-32 band graphic & parametric Biquad IIR chain** | Custom C++ SIMD NEON biquad filter chain |
-| **Internal Headroom** | None (16-bit clips at 0 dBFS) | **>1500 dB digital headroom (IEEE 754 float)** | >1500 dB digital headroom |
+| **Internal Arithmetic Dynamic Span** | None (16-bit fixed integer clips at 0 dBFS) | **Scale-invariant float (>1500 dB exponent span, ~144 dB mantissa SNR)** | Scale-invariant float/double buffer math |
 | **Audio Latency** | Medium (50–100ms) | Low to Medium (20–40ms) | Lowest (<10ms via AAudio exclusive mode) |
 | **Battery Usage** | Lowest (Hardware DSP offloading when available) | Very Low (Optimized Kotlin/SIMD DSP math) | Moderate (Continuous native CPU wake during DSP) |
 | **Device Compatibility**| 100% (Android API 21 through 35) | **99.5% (Float AudioTrack supported since API 21)** | Fragile across vendor Android forks (OEM HAL quirks) |
