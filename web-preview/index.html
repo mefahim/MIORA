@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-accent="dynamic">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poweramp Clone — Premium Music Player Preview</title>
+<link rel="stylesheet" href="css/reset.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<div class="preview-toolbar" role="toolbar" aria-label="Preview controls">
+  <div class="preview-title"><span class="preview-logo" id="toolbar-logo"></span><span>Poweramp Clone <em>premium preview · Phase 2.1</em></span></div>
+  <div class="viewport-switcher" role="group" aria-label="Viewport size">
+    <button data-viewport="mobile" class="active" aria-pressed="true">Mobile</button>
+    <button data-viewport="tablet" aria-pressed="false">Tablet</button>
+    <button data-viewport="desktop" aria-pressed="false">Desktop</button>
+  </div>
+  <button id="toolbar-theme" class="toolbar-theme" aria-label="Toggle light or dark theme">Dark</button>
+</div>
+
+<main class="stage">
+  <div id="phone" class="phone viewport-mobile" aria-label="Music player app preview">
+    <div class="app">
+      <aside class="sidebar" aria-label="Main navigation">
+        <div class="brand"><span class="brand-mark" id="brand-mark"></span><span class="brand-name">Poweramp<br>Clone</span></div>
+        <nav class="side-nav" aria-label="Primary">
+          <button data-nav="home" class="side-item active"><span class="ic"></span>Home</button>
+          <button data-nav="library" class="side-item"><span class="ic"></span>Library</button>
+          <button data-nav="search" class="side-item"><span class="ic"></span>Search</button>
+          <button data-nav="queue" class="side-item"><span class="ic"></span>Queue</button>
+        </nav>
+        <div class="side-foot">
+          <button data-nav="settings" class="side-item"><span class="ic"></span>Settings</button>
+          <p class="side-note">Simulated playback<br>20 sample tracks</p>
+        </div>
+      </aside>
+      <div class="main">
+        <div class="statusbar" aria-hidden="true"><span>9:41</span><span class="status-icons">5G ▂▄▆ 100%</span></div>
+        <div id="screens" class="screens">
+          <section class="screen active" id="screen-home" data-screen="home" aria-label="Home"></section>
+          <section class="screen" id="screen-library" data-screen="library" aria-label="Library"></section>
+          <section class="screen" id="screen-songs" data-screen="songs" aria-label="Songs"></section>
+          <section class="screen" id="screen-albums" data-screen="albums" aria-label="Albums"></section>
+          <section class="screen" id="screen-artists" data-screen="artists" aria-label="Artists"></section>
+          <section class="screen" id="screen-playlists" data-screen="playlists" aria-label="Playlists"></section>
+          <section class="screen" id="screen-folders" data-screen="folders" aria-label="Folders"></section>
+          <section class="screen" id="screen-genres" data-screen="genres" aria-label="Genres"></section>
+          <section class="screen" id="screen-detail" data-screen="detail" aria-label="Details"></section>
+          <section class="screen" id="screen-search" data-screen="search" aria-label="Search"></section>
+          <section class="screen" id="screen-queue" data-screen="queue" aria-label="Queue"></section>
+          <section class="screen" id="screen-settings" data-screen="settings" aria-label="Settings"></section>
+          <section class="screen" id="screen-lyrics" data-screen="lyrics" aria-label="Lyrics"></section>
+          <section class="screen" id="screen-audioinfo" data-screen="audioinfo" aria-label="Audio info"></section>
+          <section class="screen" id="screen-equalizer" data-screen="equalizer" aria-label="Equalizer"></section>
+          <section class="screen player-screen" id="screen-player" data-screen="player" aria-label="Now playing"></section>
+        </div>
+        <div id="miniplayer" class="miniplayer" role="region" aria-label="Mini player"></div>
+        <nav id="bottomnav" class="bottomnav" aria-label="Primary navigation">
+          <button data-nav="home" class="nav-item active" aria-label="Home"><span class="nav-icon"></span><span>Home</span></button>
+          <button data-nav="library" class="nav-item" aria-label="Library"><span class="nav-icon"></span><span>Library</span></button>
+          <button data-nav="search" class="nav-item" aria-label="Search"><span class="nav-icon"></span><span>Search</span></button>
+          <button data-nav="queue" class="nav-item" aria-label="Queue"><span class="nav-icon"></span><span>Queue</span></button>
+        </nav>
+      </div>
+    </div>
+  </div>
+  <p class="stage-note">Premium redesign · Phase 2.1 — simulated playback, no audio engine. Data matches the Android Phase 2 sample library.</p>
+</main>
+
+<div id="modal-root"></div>
+<div id="snackbar" class="snackbar" role="status" aria-live="polite"></div>
+
+<script src="js/data.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/artwork.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/player.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/library.js"></script>
+<script src="js/search.js"></script>
+<script src="js/queue.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

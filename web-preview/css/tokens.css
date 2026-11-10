@@ -1,0 +1,51 @@
+/* Design tokens — Phase 2.1 premium redesign (see DESIGN-SYSTEM.md).
+   Neutral surfaces are theme-owned; accent is derived from artwork by theme.js. */
+:root {
+  /* Type scale */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fs-display: 30px; --fs-title: 24px; --fs-section: 17px; --fs-track: 16px;
+  --fs-meta: 14px; --fs-label: 12px; --fs-num: 13px;
+  /* Spacing */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 28px; --sp-7: 40px;
+  --gutter: 20px;
+  /* Shape */
+  --r-art-lg: 16px; --r-art: 12px; --r-btn: 999px; --r-input: 14px; --r-dialog: 24px; --r-card: 20px;
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(16, 20, 20, 0.06);
+  --shadow-md: 0 8px 24px rgba(16, 20, 20, 0.12);
+  --shadow-lg: 0 24px 64px rgba(16, 20, 20, 0.28);
+  /* Motion */
+  --dur-fast: 160ms; --dur-med: 240ms; --dur-slow: 360ms; --dur-palette: 500ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Layout */
+  --nav-h: 64px; --mini-h: 68px; --sidebar-w: 248px; --content-max: 1080px;
+  /* Fallback accent (deep ocean teal) */
+  --accent: #0f766e; --accent-2: #2f5da8; --accent-3: #2e7d32;
+  --accent-soft: rgba(15, 118, 110, 0.12);
+  --on-accent: #ffffff;
+  --player-bg-1: #0f766e; --player-bg-2: #0b3d39;
+  /* Light theme (warm off-white) */
+  --bg: #faf9f6; --surface: #ffffff; --surface-2: #ffffff; --surface-3: #f1efe9;
+  --text: #171816; --text-2: #5c5f5a; --text-3: #8a8d86;
+  --outline: #e3e0d8; --divider: rgba(23, 24, 22, 0.08);
+  --color-primary: var(--accent);
+}
+[data-theme="dark"] {
+  --bg: #121313; --surface: #1a1c1c; --surface-2: #232626; --surface-3: #262929;
+  --text: #f2f1ec; --text-2: #a3a6a0; --text-3: #6f7370;
+  --outline: #2e3232; --divider: rgba(242, 241, 236, 0.09);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
+  --accent-soft: rgba(255, 255, 255, 0.08);
+}
+/* Accent choices (fixed seeds; artwork seed wins when dynamic colour is on) */
+[data-accent="ocean"] { --accent: #0f766e; }
+[data-accent="forest"] { --accent: #2e7d32; }
+[data-accent="ember"] { --accent: #c2410c; }
+[data-accent="rose"] { --accent: #be123c; }
+[data-accent="graphite"] { --accent: #64748b; }
+@media (min-width: 900px) { :root { --gutter: 28px; } }
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-med: 0ms; --dur-slow: 0ms; --dur-palette: 0ms; }
+}

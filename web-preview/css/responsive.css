@@ -1,0 +1,20 @@
+/* Responsive — Phase 2.1: real layouts per viewport, never a stretched phone. */
+@media (max-width: 560px) {
+  .preview-toolbar { padding: 10px 12px; gap: 8px; }
+  .preview-title em { display: none; }
+  .viewport-switcher button { padding: 6px 8px; font-size: 12px; }
+  .stage { padding: 12px 0 32px; }
+  .phone { width: 100%; max-width: 430px; height: calc(100dvh - 130px); border-radius: 0; box-shadow: none; }
+  .phone.viewport-tablet, .phone.viewport-desktop { width: 100%; }
+}
+@media (min-width: 561px) {
+  .phone.viewport-tablet .album-grid { grid-template-columns: repeat(3, 1fr); }
+  .phone.viewport-tablet .hscroll .shelf-item { width: 150px; }
+  .phone.viewport-desktop .album-grid { grid-template-columns: repeat(4, 1fr); }
+  .phone.viewport-desktop .hscroll .shelf-item { width: 160px; }
+  .phone.viewport-desktop .list, .phone.viewport-desktop .album-grid, .phone.viewport-desktop .home-hero { max-width: 880px; margin-left: auto; margin-right: auto; }
+  .phone.viewport-desktop .player-wrap { flex-direction: row; align-items: center; gap: 56px; padding: 24px 56px; max-width: 960px; margin: 0 auto; }
+  .phone.viewport-desktop .player-art { width: 400px; margin: 0; flex: none; }
+  .phone.viewport-desktop .player-side { flex: 1; max-width: 520px; }
+  .phone.viewport-desktop .kv-group, .phone.viewport-desktop .eq-bands { max-width: 760px; margin-left: auto; margin-right: auto; }
+}

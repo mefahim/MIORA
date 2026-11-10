@@ -1,0 +1,60 @@
+/* Application shell — Phase 2.1: responsive app with sidebar (desktop) /
+   bottom nav (mobile), smooth palette transitions. */
+.preview-toolbar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 12px 20px; background: #101414; color: #e6e8e6;
+  position: sticky; top: 0; z-index: 50;
+}
+.preview-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; }
+.preview-title em { font-style: normal; font-weight: 400; opacity: 0.7; font-size: 13px; }
+.preview-logo { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: #fff; }
+.viewport-switcher { display: flex; gap: 4px; margin-left: auto; background: rgba(255,255,255,0.08); padding: 4px; border-radius: 999px; }
+.viewport-switcher button { padding: 6px 12px; border-radius: 999px; font-size: 13px; color: #cfd4d2; }
+.viewport-switcher button.active { background: var(--accent); color: #fff; }
+.toolbar-theme { padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,0.08); color: #e6e8e6; font-size: 13px; }
+.stage { display: flex; flex-direction: column; align-items: center; padding: 24px 12px 48px; gap: 12px; min-height: calc(100vh - 57px); }
+.phone {
+  width: 390px; max-width: 100%; height: 844px; max-height: calc(100vh - 140px); min-height: 620px;
+  background: var(--bg); color: var(--text);
+  border-radius: 36px; overflow: hidden; position: relative;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 10px #1d2121, 0 0 0 12px #333938;
+  transition: width var(--dur-slow) var(--ease), height var(--dur-slow) var(--ease), background-color var(--dur-palette) var(--ease), color var(--dur-palette) var(--ease);
+}
+.phone.viewport-tablet { width: 760px; height: 920px; }
+.phone.viewport-desktop { width: 1220px; height: 860px; border-radius: 24px; }
+.app { display: flex; height: 100%; min-height: 0; }
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.sidebar { display: none; }
+.statusbar { display: flex; justify-content: space-between; padding: 12px 22px 4px; font-size: 13px; font-weight: 600; flex: none; color: var(--text-2); }
+.screens { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; background: var(--bg); display: none; padding-bottom: 16px; scrollbar-width: thin; transition: background-color var(--dur-palette) var(--ease); }
+.screen.active { display: block; animation: screenIn var(--dur-med) var(--ease); }
+@keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.miniplayer { flex: none; background: var(--surface); border-top: 1px solid var(--divider); transition: background-color var(--dur-palette) var(--ease); }
+.bottomnav { flex: none; display: flex; background: var(--surface); border-top: 1px solid var(--divider); padding-bottom: 8px; transition: background-color var(--dur-palette) var(--ease); }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 4px; font-size: 11px; font-weight: 600; color: var(--text-3); min-height: 56px; }
+.nav-item .nav-icon { display: grid; place-items: center; width: 24px; height: 24px; }
+.nav-item.active { color: var(--accent); }
+.stage-note { color: #9aa5a2; font-size: 12px; text-align: center; max-width: 560px; }
+/* Sidebar (tablet + desktop viewports) */
+.phone.viewport-tablet .sidebar, .phone.viewport-desktop .sidebar {
+  display: flex; flex-direction: column; width: 216px; flex: none;
+  background: var(--surface); border-right: 1px solid var(--divider); padding: 20px 12px;
+}
+.phone.viewport-desktop .sidebar { width: var(--sidebar-w); }
+.phone.viewport-tablet .bottomnav, .phone.viewport-desktop .bottomnav { display: none; }
+.phone.viewport-tablet .statusbar, .phone.viewport-desktop .statusbar { display: none; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 20px; }
+.brand-mark { width: 36px; height: 36px; border-radius: 11px; background: var(--accent); color: #fff; display: grid; place-items: center; flex: none; }
+.brand-name { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.side-nav { display: flex; flex-direction: column; gap: 2px; }
+.side-item { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--text-2); text-align: left; width: 100%; }
+.side-item .ic { display: grid; place-items: center; width: 22px; height: 22px; }
+.side-item:hover { background: var(--surface-3); color: var(--text); }
+.side-item.active { background: var(--accent-soft); color: var(--accent); }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+.side-note { font-size: 12px; color: var(--text-3); padding: 0 12px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) {
+  .screen.active { animation: none; }
+  .phone { transition: none; }
+}
