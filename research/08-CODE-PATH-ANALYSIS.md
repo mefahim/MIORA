@@ -74,7 +74,7 @@ Target Application Core Subsystems:
     - `callbackOnDspTrackStarted(long trackId)`
     - `callbackOnTrackEnded()`
     - `callbackOnPositionUpdate(long positionMs)`
-- **Inferred vs Observed**: JNI signatures and callback method names are 100% verified via DEX prototypes; native C++ assembly internals are located in `libpowerampcore.so`.
+- **Inferred vs Observed**: JNI signatures and callback method names are directly confirmed via DEX prototypes; native C++ assembly internals are located in `libpowerampcore.so`.
 - **Clean-Room Implementation**: In modern architecture, we use Media3 `ExoPlayer` or Oboe C++ audio callbacks wrapped in a clean JNI interface.
 
 ---
@@ -95,13 +95,14 @@ Target Application Core Subsystems:
 - **Classes**: `com.maxmpz.audioplayer.processing.Pipeline2`, `libpowerampcore.so`
 - **Evidence References**: `Pipeline2.java`, JNI exports
 - **Observed Bytecode**:
-  - High-precision audio processing occurs in floating-point format:
-    - Intermediate filter coefficient calculations in `Coefs.java` utilize 64-bit IEEE 754 double-precision (`double[][] outCoefs`), providing 53-bit mantissa precision (~318 dB mathematical SNR).
-    - Audio PCM sample streaming buffers utilize 32-bit single-precision float (`float`), providing 24-bit mantissa resolution (~144 dB instantaneous linear dynamic range) with an exponent dynamic range spanning $>1500$ dB numerically (between $10^{-38}$ and $10^{38}$).
-    - **Engineering Qualification on Headroom**: This numerical dynamic span provides scale-invariant intermediate arithmetic, preventing digital clipping and accumulation overflow during multi-band parametric EQ boosts or digital preamp gain scaling. However, it does not represent usable acoustic dynamic range; final output fidelity remains constrained by hardware DAC analog noise floors (typically 100–125 dB SNR) and physical bit depth.
+  - High-precision audio processing involves floating-point representation:
+    - **Filter Coefficients**: Intermediate filter coefficient calculation in `Coefs.java` outputs 64-bit IEEE 754 double precision (`double[][] outCoefs`), confirming that coefficient generation uses 64-bit float math.
+    - **Audio PCM Sample Buffers**: Native PCM buffer streaming references indicate 32-bit single-precision float (`float`) sample buffers, providing 24-bit mantissa linear precision (~144 dB instantaneous theoretical dynamic range) with scale-invariant exponent scaling across numerical extremes ($10^{-38}$ to $10^{38}$).
+    - **Engineering Qualification on Internal Headroom vs. DAC Output**: The broad numerical range of floating-point arithmetic prevents internal clipping, numerical overflow, and roundoff accumulation when applying multi-band EQ boosts or digital preamp scaling. However, this theoretical numerical span must NOT be conflated with usable acoustic dynamic range or physical DAC output, which remains bounded by hardware DAC analog noise floors (typically 100–125 dB SNR) and physical converter bit depth.
+    - **Native Pipeline Uncertainty**: While coefficient calculation output is verified as 64-bit double and PCM buffers as 32-bit float, the exact internal precision of downstream filter state delay lines, biquad accumulators, and proprietary SIMD assembler routines inside `libpowerampcore.so` cannot be conclusively established from JNI signatures alone and remains an undocumented native implementation detail.
   - Volume attenuation, preamp gain, equalizer biquads, tone shelving, spatializer, and reverb are applied sequentially in a single native audio callback thread before final dithering/quantization to hardware output depth.
   - `native_route_msg` uses a lock-free ring buffer to enqueue parameter updates (such as EQ slider adjustments) without blocking the realtime audio thread.
-- **Inferred vs Observed**: Message routing and DSP thread decoupling are observed in bytecode/JNI; internal SIMD vectorization routines (ARM NEON instructions) are located in the native binary.
+- **Inferred vs Observed**: Message routing and DSP thread decoupling are observed in bytecode/JNI; internal SIMD vectorization routines (ARM NEON instructions) and internal filter state accumulator precisions reside inside the compiled native binary and are not fully exposed via public Java interfaces.
 - **Clean-Room Implementation**: Custom `AudioProcessor` in Media3 or C++ Oboe callback utilizing 32-bit float PCM buffers.
 
 ---
@@ -118,7 +119,7 @@ Target Application Core Subsystems:
     - `channels`: 0 (Stereo), 1 (Left), 2 (Right)
   - `Coefs.native_calc_bands_coefs(int sampleRate, Band[] bands, double[][] outCoefs)` evaluates the transfer function:
     $$H(z) = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{a_0 + a_1 z^{-1} + a_2 z^{-2}}$$
-- **Inferred vs Observed**: All parameter ranges, types, and coefficient arrays are directly observed in decompiled classes; calculations match Robert Bristow-Johnson's Audio EQ Cookbook. Filter state computation in 64-bit double precision is confirmed by the `double[][]` JNI argument.
+- **Inferred vs Observed**: All parameter ranges, types, and coefficient arrays are directly observed in decompiled classes; calculations match Robert Bristow-Johnson's Audio EQ Cookbook. The `double[][]` JNI argument confirms that the calculated coefficient output delivered to the caller uses 64-bit double precision; however, the internal arithmetic precision of downstream filter accumulators and delay-line state registers in the native core cannot be inferred from this signature alone.
 - **Clean-Room Implementation**: Pure Kotlin or C++ implementation of Robert Bristow-Johnson biquad formulas with linear frequency response curve plotting in Compose Canvas.
 
 ---
@@ -132,8 +133,8 @@ Target Application Core Subsystems:
     - `AudioFormat.ENCODING_PCM_FLOAT`
     - Supported sample rates: 44.1, 48, 88.2, 96, 176.4, 192, 384 kHz
     - Audio attributes: `AudioAttributes.USAGE_MEDIA`, `AudioAttributes.CONTENT_TYPE_MUSIC`
-  - Requests direct output flags (`AUDIO_OUTPUT_FLAG_DIRECT`, `FLAG_RAW`) to bypass Android's default 16-bit integer fixed 48kHz resampling in `AudioFlinger`, when permitted by the device audio policy and hardware HAL.
-- **Inferred vs Observed**: Plugin service declarations and AudioTrack parameters observed in bytecode; actual device-specific AudioFlinger bypass and bit-perfect playback depend on OEM kernel/HAL audio policy rules.
+  - Requests direct output flags (`AUDIO_OUTPUT_FLAG_DIRECT`, `FLAG_RAW`) to request an unmixed audio stream from the device audio policy.
+- **Inferred vs Observed**: Plugin service declarations and AudioTrack parameters are directly observed in bytecode. However, a request for direct or raw output does not prove that the request was accepted by the OS or that the final output bypassed the normal mixer; whether direct routing is granted depends on the Android version, device audio policy, HAL configuration, and active audio routes, which requires physical hardware runtime verification.
 - **Clean-Room Implementation**: Configure `AudioTrack.Builder().setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_FLOAT)...)` in AndroidX Media3.
 
 ---
@@ -161,7 +162,7 @@ Target Application Core Subsystems:
   - Full-text search table `pref_search_fts` using `FTS4` with `tokenize=unicode61`.
   - Relational normalization separates physical paths (`folders`, `folder_files`, `storages`) from logical tags (`artists`, `albums`, `genres`, `composers`, `multi_artists`).
   - Pre-computed RMS waveform audio samples stored directly as `BLOB` in `folder_files.wave`.
-- **Inferred vs Observed**: Complete SQL schema, indexes, table names, and migration procedures are 100% verified in decompiled bytecode.
+- **Inferred vs Observed**: Complete SQL schema, indexes, table names, and migration procedures are directly confirmed in decompiled bytecode.
 - **Clean-Room Implementation**: AndroidX Room 2.6+ with `@Entity` models, `@Fts5` virtual tables, and SQLite WAL mode.
 
 ---

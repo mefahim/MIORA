@@ -39,6 +39,7 @@ All detailed engineering and forensic reports are located in the [`research/`](r
 | **[14](research/14-EVIDENCE-MATRIX.md)** | **Evidence Traceability Matrix** | Traceability matrix linking every feature to evidence logs, confidence ratings, and test cases. |
 | **[15](research/15-FEATURE-AUDIT-VALIDATION.md)** | **Feature Audit & Hardening** | Four-dimensional audit (Declaration, Implementation, Execution, Outcome) across all 70 features. |
 | **[16](research/16-QA-CORRECTION-LOG.md)** | **QA & Consistency Log** | Final Phase 1.2 QA corrections, audio claim qualifications, and FFmpeg compliance audit. |
+| **[17](research/17-PHASE-1.2.1-CORRECTION-REPORT.md)** | **Phase 1.2.1 Correction Report** | Residual technical evidence corrections, DSP precision bounds, HAL routing, and LGPL analysis. |
 
 ---
 
@@ -63,7 +64,7 @@ app (Application entry, Hilt DI root)
 ```
 
 ### Key Engineering Decisions
-- **Audio Pipeline**: Custom Float `AudioTrack` output pipeline (32-bit floating-point PCM) bypassing Android's default 16-bit integer mixing truncation.
+- **Audio Pipeline**: Custom Float `AudioTrack` output pipeline utilizing 32-bit floating-point PCM (`AudioFormat.ENCODING_PCM_FLOAT`) to provide scale-invariant DSP headroom and avoid 16-bit fixed-point quantization distortion prior to output.
 - **Parametric Equalizer**: Digital Biquad IIR filtering (Peaking, Low-Shelf, High-Shelf, High-Pass, Low-Pass) calculated with Robert Bristow-Johnson Audio EQ Cookbook formulas.
 - **Library Scanning**: Dual-engine scanner combining Android `MediaStore` with direct filesystem indexing and Storage Access Framework (SAF) for SD cards and USB DAC/OTG storage.
 - **UI Engine**: 100% Jetpack Compose with custom hardware-accelerated Canvas renderers for audio waveforms and spectrum visualizers.

@@ -543,7 +543,7 @@ In accordance with Phase 1.1 validation rules, every feature is audited across f
 - **Evidence File**: `evidence/jadx_src/sources/p000/AthdPluginService.java`.
 - **Relevant Class/Method**: `AthdPluginService`.
 - **Exact Evidence Excerpt**: Class `AthdPluginService` targeting Android high-resolution audio HAL.
-- **Analysis Explanation**: Bypasses Android standard `AudioTrack` 48kHz fixed resampler when hardware permits.
+- **Analysis Explanation**: Requests direct routing to bypass standard mixer resampling when hardware and audio policy permit.
 - **Confidence**: High.
 - **Missing Proof**: Vendor-specific HAL compatibility across Android 12 through 15.
 - **Next Verification Action**: Query `AudioManager.getAudioDevices()` for native sample rates.

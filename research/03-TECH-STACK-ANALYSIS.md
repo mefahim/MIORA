@@ -33,9 +33,9 @@ Original Poweramp Stack               Proposed Modern Clean-Room Stack
 - **Audio Output Plugins**:
   - `AaPluginService`: AAudio (Android NDK low-latency audio API).
   - `AtPluginService`: Standard Java `AudioTrack` output.
-  - `AthdPluginService`: AudioTrack Hi-Res (Direct PCM output requesting direct output flags to bypass standard AudioFlinger 48kHz resampling on supported Qualcomm, Sony, and LG hardware).
+  - `AthdPluginService`: AudioTrack Hi-Res (Attempts to request direct output flags from device audio policy; whether direct routing is granted depends on the device HAL and vendor audio policy, requiring physical hardware testing).
   - `OslPluginService`: OpenSL ES native output.
-  - `UsbxPluginService`: USB Audio host mode intended for direct PCM/DSD output to external USB DACs bypassing OS mixer resampling.
+  - `UsbxPluginService`: USB Audio host mode intended to communicate directly with external USB audio endpoints; actual bit-perfect routing requires verifying the device USB audio driver path without intervening OS resampling.
   - `CcPluginService`: Google Cast / Chromecast audio streaming.
 - **Decoding Pipeline**:
   - `libffmpeg_neon.so`: Custom build of FFmpeg with ARM NEON SIMD optimizations for decoding MP3, AAC, FLAC, ALAC, APE, OPUS, OGG Vorbis, WavPack, Musepack, and DSD (DSF/DFF).
@@ -114,6 +114,6 @@ To build a clean-room, maintainable, modern, high-performance music player witho
 | **Development Complexity** | Extremely High (15+ years of custom C++ DSP, custom UI engine, manual JNI) | Moderate to High (Standardized Jetpack & Media3 components + focused audio engine) | High |
 | **Maintainability** | Low (Large obfuscated C++ codebase, proprietary scene graph) | Very High (Standard idiomatic Kotlin, Compose, Room, Hilt) | High |
 | **Android Version Support** | Android 5.0 to 16 | Android 8.0 (API 26) to Android 16 (API 36) | Ideal |
-| **Audio Quality & Bit-Depth** | 64-bit Float DSP, Hi-Res direct output, DVC | 32-bit Float PCM, Media3 AudioTrack Float / Oboe Hi-Res | Matches 99% audiophile requirements |
+| **Audio Processing Precision** | Floating-point DSP (64-bit double coefficient calculation, float PCM sample buffers) | 32-bit Float PCM, Media3 AudioTrack Float / Oboe Hi-Res | Meets core audiophile requirements without internal clipping |
 | **UI Fluidity** | 60-120 fps via custom OpenGL/Canvas | 60-120 fps via Jetpack Compose Hardware Acceleration | Matches |
 | **Licensing Risks** | Proprietary C++ engine | 100% Permissive Open Source (Apache 2.0 / MIT) | Zero IP Infringement Risk |

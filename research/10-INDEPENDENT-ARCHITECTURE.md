@@ -95,19 +95,19 @@ In compliance with Phase 1.1 architectural validation, we rigorously evaluate th
 | :--- | :--- | :--- | :--- |
 | **Codec Support** | Standard Android codecs (MP3, AAC, FLAC, Opus) | Wide: System codecs + FFmpeg extension (APE, ALAC, DSD, WavPack) | Maximum: Custom-compiled FFmpeg NDK decoders |
 | **PCM Formats** | 16-bit signed integer PCM | **32-bit float PCM (`ENCODING_PCM_FLOAT`)** | 32/64-bit float native audio ring buffers |
-| **Sample-Rate Handling** | Fixed OS resampling (usually 48kHz via AudioFlinger) | Preserves source rate (44.1–192kHz) where hardware permits | Native rate selection up to 384kHz via AAudio exclusive |
+| **Sample-Rate Handling** | Standard OS mixing path (resampling and mixing dependent on device audio policy and HAL) | Preserves source rate where accepted by device audio policy / HAL | Native rate selection where supported by AAudio exclusive HAL |
 | **AudioTrack Behavior** | Standard `DefaultAudioSink` | Custom `AudioSink` with float output & direct flags | Bypasses Java AudioTrack; direct AAudio/OpenSL |
 | **USB DAC Compatibility** | Standard OS USB class driver | Direct routing via `AudioDeviceInfo.TYPE_USB_DEVICE` | Custom USB Host asynchronous packet streaming |
 | **Audio Focus** | Built-in, fully automated by Media3 | Built-in, integrated with Media3 session | Manual implementation via JNI callbacks |
 | **Gapless Playback** | Built-in ExoPlayer gapless for MP3/FLAC/Opus | Built-in with custom padding/delay trim | Manual dual-decoder buffer pre-roll in C++ |
 | **Crossfade** | Not supported out-of-the-box | Clean dual-buffer mixing via custom `AudioProcessor` | Custom C++ mixing loop with linear/equal-power curve |
 | **EQ Processing** | Limited framework `AudioEffect` (5-10 fixed bands) | **Full 10-32 band graphic & parametric Biquad IIR chain** | Custom C++ SIMD NEON biquad filter chain |
-| **Internal Arithmetic Dynamic Span** | None (16-bit fixed integer clips at 0 dBFS) | **Scale-invariant float (>1500 dB exponent span, ~144 dB mantissa SNR)** | Scale-invariant float/double buffer math |
-| **Audio Latency** | Medium (50–100ms) | Low to Medium (20–40ms) | Lowest (<10ms via AAudio exclusive mode) |
-| **Battery Usage** | Lowest (Hardware DSP offloading when available) | Very Low (Optimized Kotlin/SIMD DSP math) | Moderate (Continuous native CPU wake during DSP) |
-| **Device Compatibility**| 100% (Android API 21 through 35) | **99.5% (Float AudioTrack supported since API 21)** | Fragile across vendor Android forks (OEM HAL quirks) |
-| **Development Complexity**| Lowest | **Moderate (Clean separation of concerns, testable)** | Extremely High (NDK, C++ ABI builds, memory hazards) |
-| **Licensing Risks** | None (Apache 2.0) | **Zero proprietary risk (Apache 2.0 / MIT)** | LGPL 2.1 compliance management for FFmpeg |
+| **Internal Arithmetic Dynamic Span** | None (16-bit fixed integer clips at 0 dBFS) | **Scale-invariant float (>1500 dB mathematical exponent span, ~144 dB mantissa SNR)** | Scale-invariant float/double buffer math |
+| **Audio Latency (Estimated)** | Estimated Standard: 50–100ms (buffer-dependent) | **Design Target: Low (estimated 20–50ms)** | Theoretical Minimum (<10ms via AAudio exclusive mode, hardware-dependent) |
+| **Battery Impact (Estimated)** | Low (standard OS path; hardware DSP offloading when available) | Low to Moderate (software float DSP calculations on CPU) | Moderate to High (continuous native CPU wake during low-latency polling) |
+| **Device Compatibility** | Universal (Android API 21 through 35 framework standard) | **Broad platform availability (Float AudioTrack supported in Android framework since API 21)** | Fragile across vendor Android forks (OEM HAL quirks) |
+| **Development Complexity** | Lowest | **Moderate (Clean separation of concerns, testable)** | Extremely High (NDK, C++ ABI builds, memory hazards) |
+| **Licensing Risks** | None (Apache 2.0) | **Clean-room open-source architecture (Apache 2.0 / MIT dependencies; external FFmpeg requires LGPL review)** | LGPL 2.1 compliance management for FFmpeg |
 
 ---
 
@@ -115,11 +115,18 @@ In compliance with Phase 1.1 architectural validation, we rigorously evaluate th
 
 > [!WARNING]
 > **Float PCM vs. Bit-Perfect Output**:
-> 32-bit floating-point PCM (`AudioFormat.ENCODING_PCM_FLOAT`) eliminates digital clipping and rounding distortion during DSP equalization, providing immense dynamic headroom. However, **Float PCM is NOT identical to bit-perfect output**. Bit-perfect reproduction means the digital samples delivered to the DAC are mathematically identical to the source file without resampling or volume scaling. If the Android system mixer (`AudioFlinger`) or device kernel resamples 44.1kHz audio to 48kHz, the stream is no longer bit-perfect even if delivered in 32-bit float.
+> 32-bit floating-point PCM (`AudioFormat.ENCODING_PCM_FLOAT`) provides scale-invariant numerical dynamic range that prevents internal clipping and accumulation distortion during DSP equalization. However, **Float PCM is NOT identical to bit-perfect output**. Bit-perfect reproduction means the digital audio samples delivered to the hardware DAC are mathematically identical to the source file without gain changes, equalization, or sample-rate conversion.
+> - Active equalization, volume scaling, or crossfading inherently modifies sample values and precludes bit-perfect reproduction.
+> - Even with DSP disabled, bit-perfect reproduction requires establishing that the complete source-to-DAC path bypassed system mixing and resampling. Output format, sample rate, mixing, and resampling behavior depend on the Android version, device audio policy, HAL implementation, and output path.
 
 > [!IMPORTANT]
-> **DAC Hardware Sample Rate Realities**:
-> Not all USB DACs or internal smartphone DACs support arbitrary sample rates (e.g. 88.2kHz or 384kHz). An audiophile audio player must query the device's supported sample rates via `AudioDeviceInfo.getSampleRates()` and negotiate the closest integer-multiple clock (e.g. 44.1kHz -> 88.2kHz -> 176.4kHz; 48kHz -> 96kHz -> 192kHz) to avoid harmonic interpolation distortion.
+> **DAC Hardware Sample Rate & Negotiation Realities**:
+> Not all USB DACs or smartphone DACs support every arbitrary sample rate. Furthermore, integer-multiple sample rate conversion is not inherently distortion-free. An audiophile audio player implementation must:
+> 1. Query the device's supported sample rates using standard Android APIs (`AudioDeviceInfo.getSampleRates()` on API 23+).
+> 2. Negotiate an actually supported output configuration on the target hardware.
+> 3. Preserve the source sample rate where natively accepted by the hardware route.
+> 4. Use an explicitly documented, high-quality bandlimited sinc resampling strategy when sample rate conversion is unavoidable.
+> 5. Verify the entire physical audio route before claiming bit-perfect playback on any specific device.
 
 ### Recommended Architectural Strategy: Architecture B
 Architecture B strikes the ideal balance between audiophile audio reproduction, maintainability, and clean-room independence:

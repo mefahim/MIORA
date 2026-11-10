@@ -24,14 +24,14 @@ This document logs the final quality assurance (QA) audit and consistency correc
 ### Task 2: Audio Engineering Claims Audit & Verification
 - **Issue**: Unqualified statements regarding "1500 dB headroom", "64-bit float DSP", "bit-perfect equalization", and universal USB DAC sample rates.
 - **Evidentiary Audit & Resolutions**:
-  1. **"1500 dB Headroom"**:
+  1. **"1500 dB Dynamic Range" vs Exponent Span**:
      - *Evidence*: IEEE 754 32-bit float spans exponents from $10^{-38}$ to $10^{38}$ (~1520 dB mathematical range), but instantaneous SNR is bounded by its 24-bit mantissa (~144 dB).
      - *Correction*: Removed blanket claims of "1500 dB dynamic headroom". Qualified that 32-bit float provides scale-invariant intermediate arithmetic preventing digital clipping during multi-band EQ boosts, but does not increase DAC analog dynamic range.
   2. **"64-bit float DSP" vs "32-bit float PCM"**:
      - *Evidence*: `Coefs.java` JNI signature takes `double[][] outCoefs` (64-bit double-precision IIR filter coefficients). Native PCM audio buffers stream in 32-bit float (`float`).
      - *Correction*: Explicitly distinguished 64-bit double filter coefficient calculation from 32-bit float PCM audio buffer streaming.
   3. **"Bit-Perfect Output" & AudioFlinger**:
-     - *Evidence*: Android's `AudioFlinger` resamples audio to a fixed rate (48kHz) unless routed via direct/offload tracks (`AUDIO_OUTPUT_FLAG_DIRECT`, `FLAG_RAW`).
+     - *Evidence*: Android's `AudioFlinger` typically resamples audio to match the device HAL mixer rate (frequently 48kHz) unless routed via direct/offload tracks (`AUDIO_OUTPUT_FLAG_DIRECT`, `FLAG_RAW`) accepted by audio policy.
      - *Correction*: Clarified that "bit-perfect" reproduction is mutually exclusive with active DSP equalization (gain $\neq$ 0 dB or frequency altered). Bit-perfect mode applies strictly to bit-perfect pass-through on external USB DACs when all DSP effects are bypassed.
   4. **USB DAC Sample Rates**:
      - *Evidence*: `USBMainActivity.java` captures `android.hardware.usb.action.USB_DEVICE_ATTACHED`.
@@ -94,3 +94,19 @@ With Phase 1.2 completed, the documentation suite in [`research/`](.) and [`PHAS
 2. **Technically Rigorous**: Audio engineering claims distinguish mathematical dynamic spans from hardware DAC realities.
 3. **Legally Grounded**: FFmpeg licensing reflects official primary legal requirements.
 4. **Operationally Safe**: Manual test plans respect system and application security boundaries.
+
+---
+
+## 5. Phase 1.2.1 Residual Technical Evidence Correction
+
+- **Milestone Date**: March 2026
+- **Starting QA Commit**: `0971ce4`
+- **Comprehensive Report**: [`research/17-PHASE-1.2.1-CORRECTION-REPORT.md`](17-PHASE-1.2.1-CORRECTION-REPORT.md)
+- **Scope**: Documentation-only technical wording hardening across all research artifacts.
+- **Key Corrections**:
+  1. **Runtime Verification Terminology**: Removed overbroad static verification claims in [`research/09-RUNTIME-OBSERVATIONS.md`](09-RUNTIME-OBSERVATIONS.md). Clarified that static decompilation establishes structural bytecode presence while runtime execution and hardware audio behavior remain unverified (0 features runtime verified).
+  2. **Audio DSP Precision Boundary**: Replaced "filter state computation in 64-bit double precision confirmed by JNI" in [`research/08-CODE-PATH-ANALYSIS.md`](08-CODE-PATH-ANALYSIS.md). Clarified that `Coefs.java` outputs 64-bit double filter coefficients (`double[][]`), PCM buffers stream in 32-bit float (`float`), and native accumulator/SIMD precision inside `libpowerampcore.so` is an internal native detail.
+  3. **Audio Routing Realities**: Corrected claims regarding universal 48kHz conversion in [`research/08-CODE-PATH-ANALYSIS.md`](08-CODE-PATH-ANALYSIS.md) and [`research/10-INDEPENDENT-ARCHITECTURE.md`](10-INDEPENDENT-ARCHITECTURE.md). AudioFlinger resamples to the hardware mixer rate configured by HAL/policy, and direct output flags are requests subject to HAL acceptance. Confirmed bit-perfect reproduction is mutually exclusive with active DSP/EQ.
+  4. **FFmpeg LGPL Compliance**: Completely overhauled Section 2.A in [`research/12-RISK-AND-LICENSING.md`](12-RISK-AND-LICENSING.md) to document LGPL v2.1 Section 6 user relinking/replacement requirements and patent exposure under MPEG LA / Via Licensing.
+  5. **Architecture Matrix Claims**: Audited numerical claims in Section 4 of [`research/10-INDEPENDENT-ARCHITECTURE.md`](10-INDEPENDENT-ARCHITECTURE.md), designating latency, battery, and compatibility metrics as design targets and estimates.
+- **Verification**: All 70 canonical feature classifications unchanged (13 / 55 / 1 / 1 / 0); APK SHA-256 recalculated and verified; 0 production application code files.

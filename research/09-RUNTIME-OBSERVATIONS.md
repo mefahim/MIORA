@@ -13,7 +13,9 @@ ADB Probing Status:
 ```
 
 > [!WARNING]
-> **Runtime Verification Blocked**: Because no physical Android hardware or active emulator instance is connected to this environment, direct runtime execution is explicitly documented as **BLOCKED**. In accordance with Phase 1.1 instructions, no runtime observations, logs, or screenshots have been fabricated. Instead, 100% of functional requirements have been verified via deep static decompilation, and a reproducible manual test plan is established below.
+> **Runtime Verification Blocked**: Because no physical Android hardware or active emulator instance is connected to this environment, direct runtime execution is explicitly documented as **BLOCKED (0 features runtime verified)**. In accordance with strict evidence standards, no runtime observations, logs, or screenshots have been fabricated.
+> 
+> Static decompilation provided evidence for implementation structures, classes, database schemas, and declared capabilities, but **end-to-end functional execution has not been verified**, and **physical-device hardware behavior remains unverified**. A reproducible manual test plan is established below for future execution on an authorized test build.
 
 ---
 
@@ -36,7 +38,7 @@ To protect the integrity of the research findings:
 > - **Never attempt to alter, bypass, or manipulate device security controls, root privileges, system clocks, purchase states, or trial entitlement mechanisms.**
 > - All tests must operate solely within standard Android user permissions without modifying system-level security boundaries.
 
-When an authorized test environment is configured, execute the following standardized verification protocols:
+When an authorized physical test environment or emulator is configured in future testing phases, execute the following standardized verification protocols on the independent test build (these procedures describe future planned test cases, not past completed executions):
 
 ### Test Suite 1: Installation, Permissions & First-Run Onboarding
 1. **Application Sideload (Independent Test Build)**:

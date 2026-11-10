@@ -112,12 +112,12 @@ All 12 prioritized subsystems are reverse-engineered and documented in [`researc
 ## 8. Audio Architecture Evaluation & Trade-Offs
 
 Evaluated in detail in [`research/10-INDEPENDENT-ARCHITECTURE.md`](research/10-INDEPENDENT-ARCHITECTURE.md):
-- **Architecture A (Media3-First)**: High compatibility, lowest development complexity, but lacks parametric EQ and float digital headroom; capped at 48kHz by AudioFlinger.
-- **Architecture B (Hybrid Float DSP — RECOMMENDED)**: AndroidX Media3 decoding paired with custom 32-bit float PCM `AudioProcessor` / `AudioSink` and high-resolution `AudioTrack` output. Delivers audiophile parametric EQ, zero clipping, gapless transitions, clean-room independence, and 99.5% device compatibility.
-- **Architecture C (Fully Custom Native C++ / Oboe)**: Ultra-low latency (<10ms) and direct USB host control, but fragile across vendor OEM HALs and carries extreme NDK maintenance overhead.
+- **Architecture A (Media3-First)**: High compatibility, lowest development complexity, but lacks parametric EQ and scale-invariant float headroom; routes through standard audio mixing paths subject to OS resampling.
+- **Architecture B (Hybrid Float DSP — RECOMMENDED)**: AndroidX Media3 decoding paired with custom 32-bit float PCM `AudioProcessor` / `AudioSink` and high-resolution `AudioTrack` output. Delivers audiophile parametric EQ, prevents internal clipping, supports gapless transitions, clean-room independence, and broad device compatibility (`AudioTrack` float supported since API 21).
+- **Architecture C (Fully Custom Native C++ / Oboe)**: Low-latency target potential and direct USB host control, but fragile across vendor OEM HALs and carries extreme NDK maintenance overhead.
 
 > [!NOTE]
-> **Audiophile Validation Requirement**: Float PCM provides internal digital headroom against clipping, but is NOT automatically "bit-perfect". The clean-room engine will query `AudioDeviceInfo.getSampleRates()` to match native DAC hardware clock rates and avoid harmonic interpolation distortion.
+> **Audiophile Validation Requirement**: Float PCM provides internal digital headroom against clipping, but is NOT automatically "bit-perfect". Bit-perfect reproduction requires establishing that the complete source-to-DAC path is unmodified and unmixed, with DSP effects disabled. The clean-room engine must query supported sample rates via `AudioDeviceInfo` and document resampling behavior when conversion is necessary.
 
 ---
 
@@ -139,7 +139,7 @@ Documented in [`research/12-RISK-AND-LICENSING.md`](research/12-RISK-AND-LICENSI
 ---
 
 ## 11. Unresolved Technical Questions
-1. **Hardware DAC Clocks on Android 14/15**: Exact OEM-specific vendor flags required to bypass Qualcomm Snapdragon Sound / MediaTek Hi-Res AudioFlinger forced 48kHz resampling without root.
+1. **Hardware Direct Output Routing on Android 14/15**: Evaluating OEM-specific direct output flag acceptance across diverse Android HALs (e.g. Qualcomm, MediaTek) without root, and verifying when the audio server grants non-resampled routing.
 2. **Milkdrop Preset Shaders**: Feasibility of compiling complex Milkdrop `.milk` preset equation shaders into Vulkan / OpenGL ES 3.0 via projectM vs modern WebGL/Canvas compute shaders.
 
 ---
