@@ -50,6 +50,7 @@ import com.fahim.powerampclone.library.SettingsViewModel
 import com.fahim.powerampclone.navigation.Routes
 import com.fahim.powerampclone.playback.PlaybackManager
 import com.fahim.powerampclone.player.PlayerViewModel
+import com.fahim.powerampclone.update.UpdateManager
 import com.fahim.powerampclone.ui.AlbumsScreen
 import com.fahim.powerampclone.ui.ArtistsScreen
 import com.fahim.powerampclone.ui.AudioInfoScreen
@@ -77,9 +78,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private class SettingsViewModelFactory(private val store: SettingsStore) : ViewModelProvider.Factory {
+private class SettingsViewModelFactory(
+    private val store: SettingsStore,
+    private val updateManager: UpdateManager
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = SettingsViewModel(store) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = SettingsViewModel(store, updateManager) as T
 }
 
 private class MusicViewModelFactory(
@@ -137,7 +141,8 @@ fun MioraApp() {
     }
 
     val settingsStore = remember { SettingsStore(context.applicationContext) }
-    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModelFactory(settingsStore))
+    val updateManager = remember { UpdateManager(context.applicationContext) }
+    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModelFactory(settingsStore, updateManager))
     val settingsState by settingsViewModel.state.collectAsState()
     val playerState by playerViewModel.state.collectAsState()
     val backStackEntry by navController.currentBackStackEntryAsState()

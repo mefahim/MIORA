@@ -25,7 +25,9 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -57,6 +59,9 @@ import com.fahim.powerampclone.design.LocalMioraPalette
 import com.fahim.powerampclone.design.Spacing
 import com.fahim.powerampclone.design.ThemeMode
 import com.fahim.powerampclone.library.SettingsViewModel
+import com.fahim.powerampclone.update.UpdateChannel
+import com.fahim.powerampclone.update.UpdateManager
+import com.fahim.powerampclone.update.UpdateState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,11 +71,38 @@ fun SettingsScreen(
     onNavigateEqualizer: () -> Unit,
 ) {
     val state by settingsViewModel.state.collectAsState()
+    val updateState by settingsViewModel.updateState.collectAsState()
+    val updateChannel by settingsViewModel.updateChannel.collectAsState()
+    val lastChecked by settingsViewModel.lastCheckedTimestamp.collectAsState()
+
     val palette = LocalMioraPalette.current
     var themeDialog by remember { mutableStateOf(false) }
     var accentDialog by remember { mutableStateOf(false) }
     var playbackDialog by remember { mutableStateOf(false) }
     var crossfadeDialog by remember { mutableStateOf(false) }
+    var channelDialog by remember { mutableStateOf(false) }
+
+    if (channelDialog) {
+        ChoiceDialog(
+            title = "Update Channel",
+            options = listOf(
+                "Beta (Pre-release)" to UpdateChannel.BETA,
+                "Stable" to UpdateChannel.STABLE,
+            ),
+            selected = updateChannel,
+            onSelect = { settingsViewModel.setUpdateChannel(it); channelDialog = false },
+            onDismiss = { channelDialog = false },
+        )
+    }
+
+    UpdateDialog(
+        state = updateState,
+        onDownload = { settingsViewModel.startDownload(it) },
+        onInstall = { settingsViewModel.installApk(it) },
+        onCancelDownload = { settingsViewModel.cancelDownload() },
+        onDismiss = { settingsViewModel.dismissUpdate() },
+        onRetry = { settingsViewModel.checkForUpdates() },
+    )
 
     if (themeDialog) {
         ChoiceDialog(
@@ -219,13 +251,46 @@ fun SettingsScreen(
                 }
             }
 
+            item { SettingsGroupTitle("App Updates") }
+            item {
+                SettingsRow(
+                    title = "Current Version",
+                    subtitle = "v${UpdateManager.CURRENT_VERSION_NAME} (Build ${UpdateManager.CURRENT_VERSION_CODE})",
+                    icon = Icons.Filled.Info,
+                ) {}
+            }
+            item {
+                SettingsRow(
+                    title = "Update Channel",
+                    subtitle = updateChannel.displayName + " — " + updateChannel.description,
+                    icon = Icons.Filled.SystemUpdate,
+                ) {
+                    channelDialog = true
+                }
+            }
+            item {
+                val lastCheckText = if (lastChecked > 0L) {
+                    val date = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault()).format(java.util.Date(lastChecked))
+                    "Last checked: $date • Tap to check now"
+                } else {
+                    "Tap to check GitHub for updates"
+                }
+                SettingsRow(
+                    title = "Check for Updates",
+                    subtitle = lastCheckText,
+                    icon = Icons.Filled.Refresh,
+                ) {
+                    settingsViewModel.checkForUpdates()
+                }
+            }
+
             item { SettingsGroupTitle("About") }
             item {
-                SettingsRow("MIORA", "Version 1.0.0 • Your music. Your moments.", Icons.Filled.Info) {}
+                SettingsRow("MIORA", "Version ${UpdateManager.CURRENT_VERSION_NAME} • Your music. Your moments.", Icons.Filled.Info) {}
             }
             item {
                 Text(
-                    text = "Clean-room UI. Simulated playback only — no audio decoding, DSP or streaming in this phase. Dynamic colour tints the player from the current album's artwork; turn it off to keep a fixed accent.",
+                    text = "Audiophile-grade Android native music player with dynamic colour theming, persistent playlists, background audio playback, and secure in-app updates.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(Spacing.lg),
