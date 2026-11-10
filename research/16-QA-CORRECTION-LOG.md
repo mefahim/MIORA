@@ -110,3 +110,19 @@ With Phase 1.2 completed, the documentation suite in [`research/`](.) and [`PHAS
   4. **FFmpeg LGPL Compliance**: Completely overhauled Section 2.A in [`research/12-RISK-AND-LICENSING.md`](12-RISK-AND-LICENSING.md) to document LGPL v2.1 Section 6 user relinking/replacement requirements and patent exposure under MPEG LA / Via Licensing.
   5. **Architecture Matrix Claims**: Audited numerical claims in Section 4 of [`research/10-INDEPENDENT-ARCHITECTURE.md`](10-INDEPENDENT-ARCHITECTURE.md), designating latency, battery, and compatibility metrics as design targets and estimates.
 - **Verification**: All 70 canonical feature classifications unchanged (13 / 55 / 1 / 1 / 0); APK SHA-256 recalculated and verified; 0 production application code files.
+
+---
+
+## 6. Phase 1.2.2 Final Consistency Cleanup & Baseline Review
+
+- **Milestone Date**: March 2026
+- **Starting Commit**: `cc3d44973ae1a970df823811bc6e4b27918bab58`
+- **Comprehensive Report**: [`research/18-PHASE-1.2.2-FINAL-QA-REPORT.md`](18-PHASE-1.2.2-FINAL-QA-REPORT.md)
+- **Scope**: Final repository consistency cleanup, evidentiary labeling, link reconciliation, and comprehensive Phase 1 baseline review.
+- **Key Corrections**:
+  1. **Commit Provenance & Metadata Certification**: Certified accepted commit `cc3d449` in Deliverable 17; corrected documented APK file size to exact disk value `24,481,502 bytes` (~23.35 MB); and reconciled markdown link metrics across all documentation.
+  2. **Subsystem Precision Neutralization**: Renamed overview tree item in [`research/08-CODE-PATH-ANALYSIS.md`](08-CODE-PATH-ANALYSIS.md) to "Floating-Point Audio Processing Pipeline"; qualified software decoding precision to uncompressed PCM buffers (16-bit integer or 32-bit float); thoroughly articulated floating-point exponent span, intermediate clamping, and DAC output limiting.
+  3. **Architectural Matrix Evidentiary Tagging**: Added strict evidentiary labels (`[DOCUMENTED]`, `[MATHEMATICAL PROPERTY]`, `[DESIGN TARGET]`, `[ENGINEERING ESTIMATE]`, `[UNVERIFIED]`) to every comparison row in [`research/10-INDEPENDENT-ARCHITECTURE.md`](10-INDEPENDENT-ARCHITECTURE.md); qualified Architecture B as a recommended design target rather than proven production performance.
+  4. **FFmpeg Evidence Hardening**: Explicitly bounded `readelf -d` evidence to external dynamic dependencies; qualified `nm -D` dynamic symbol analysis limits; articulated Android APK user library relinking challenges under LGPL v2.1 Section 6; and placed codec patent pool exposure under formal legal review.
+- **Phase 1 Baseline Review Verdict**: **READY WITH CONDITIONS** (Condition 1: UI-only scope for Phase 2; Condition 2: Resolution of FFmpeg vs platform codec strategy prior to Phase 3 audio engine; Condition 3: Physical device verification for high-res audio claims).
+- **Verification**: All 70 canonical feature classifications strictly preserved (13 / 55 / 1 / 1 / 0); 66 declared screen components preserved (8 / 22 / 6 / 8 / 5 / 17); APK SHA-256 verified; 0 production code files; 0 broken links. Phase 2 not started.

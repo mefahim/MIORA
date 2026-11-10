@@ -1,7 +1,7 @@
 # 08 — Deep Code Path Analysis & Reverse-Engineered Internals
 
 ## 1. Overview
-This document delivers an in-depth code path analysis of the target application ([`com.maxmpz.audioplayer`](file:///workspace/poweramp-clone/poweramp-music-player-build-1035-uni.apk)), verified through REA decompiled sources, JNI bridges, and native library exports.
+This document delivers an in-depth code path analysis of the target application ([`com.maxmpz.audioplayer`](../poweramp-music-player-build-1035-uni.apk)), verified through REA decompiled sources, JNI bridges, and native library exports.
 
 The 12 critical subsystems are audited below with evidentiary citations, distinguish directly observed bytecode from inferred behavior, and outline the clean-room implementation path.
 
@@ -15,7 +15,7 @@ Target Application Core Subsystems:
 ├── 02. PlayerServiceCore (Central State Machine & Command Dispatcher)
 ├── 03. Pipeline2 JNI Bridge (Java-to-Native Control Gateway)
 ├── 04. Audio Decoding Subsystem (FFmpeg NEON & Codec Parsing)
-├── 05. Native DSP Invocation (64-Bit Float Audio Buffer Engine)
+├── 05. Native DSP Invocation (Floating-Point Audio Processing Pipeline)
 ├── 06. Equalizer & Biquad Filters (IIR Filter Design & Coefs Math)
 ├── 07. AudioTrack / AAudio Output (High-Res PCM Float Routing)
 ├── 08. MediaSession & Notification Integration (OS Transport Sync)
@@ -85,8 +85,8 @@ Target Application Core Subsystems:
 - **Observed Bytecode & Binary Layout**:
   - `libffmpeg_neon.so` contains compiled ARM NEON-optimized decoders for FLAC, ALAC, APE, Opus, Vorbis, WavPack, Musepack, DSD (DSF/DFF), and MP3.
   - Demuxing extracts stream sample rate, bit depth, and channel count, passing raw compressed packets to native ring buffers.
-  - Software decoding converts all incoming streams into uncompressed 32-bit or 64-bit IEEE 754 floating-point PCM buffers.
-- **Inferred vs Observed**: FFmpeg presence and NEON build configurations are observed directly in the ELF header and string tables; dynamic decoder selection occurs inside `libpowerampcore.so`.
+  - Software decoding converts incoming compressed streams into uncompressed PCM buffers (typically 16-bit integer or 32-bit float depending on codec and decoder configuration), which are subsequently routed into the native floating-point DSP pipeline.
+- **Inferred vs Observed**: FFmpeg presence and NEON build configurations are observed directly in the ELF header and string tables; dynamic decoder selection and output format conversion occur inside `libpowerampcore.so`. Intermediate buffer memory layouts at runtime have not been directly inspected; decoding output precision claims must not exceed confirmed JNI interfaces (32-bit float PCM buffers).
 - **Clean-Room Implementation**: Android Media3 ExoPlayer with bundled `media3-decoder-ffmpeg` extension or system MediaCodec for hardware acceleration.
 
 ---
@@ -98,7 +98,7 @@ Target Application Core Subsystems:
   - High-precision audio processing involves floating-point representation:
     - **Filter Coefficients**: Intermediate filter coefficient calculation in `Coefs.java` outputs 64-bit IEEE 754 double precision (`double[][] outCoefs`), confirming that coefficient generation uses 64-bit float math.
     - **Audio PCM Sample Buffers**: Native PCM buffer streaming references indicate 32-bit single-precision float (`float`) sample buffers, providing 24-bit mantissa linear precision (~144 dB instantaneous theoretical dynamic range) with scale-invariant exponent scaling across numerical extremes ($10^{-38}$ to $10^{38}$).
-    - **Engineering Qualification on Internal Headroom vs. DAC Output**: The broad numerical range of floating-point arithmetic prevents internal clipping, numerical overflow, and roundoff accumulation when applying multi-band EQ boosts or digital preamp scaling. However, this theoretical numerical span must NOT be conflated with usable acoustic dynamic range or physical DAC output, which remains bounded by hardware DAC analog noise floors (typically 100–125 dB SNR) and physical converter bit depth.
+    - **Engineering Qualification on Floating-Point Dynamic Range, Clipping, & DAC Output**: IEEE 754 32-bit floating-point representation has a wide exponent span that permits intermediate numerical values outside the normalized $[-1.0, 1.0]$ range without immediate fixed-point overflow. However, float PCM does NOT by itself guarantee clipping prevention. If any intermediate stage in the native DSP chain explicitly clamps values, saturation and clipping will occur. Furthermore, when converted to fixed-point hardware formats at the final AudioTrack or DAC output stage, any signal exceeding $0\text{ dBFS}$ ($\pm 1.0$) will hard clip unless proper gain attenuation, headroom management, or soft limiting is applied. Additionally, theoretical floating-point exponent span must not be conflated with usable acoustic dynamic range or physical DAC output, which remains governed by physical DAC analog noise floors (typically 100–125 dB SNR) and converter bit depth.
     - **Native Pipeline Uncertainty**: While coefficient calculation output is verified as 64-bit double and PCM buffers as 32-bit float, the exact internal precision of downstream filter state delay lines, biquad accumulators, and proprietary SIMD assembler routines inside `libpowerampcore.so` cannot be conclusively established from JNI signatures alone and remains an undocumented native implementation detail.
   - Volume attenuation, preamp gain, equalizer biquads, tone shelving, spatializer, and reverb are applied sequentially in a single native audio callback thread before final dithering/quantization to hardware output depth.
   - `native_route_msg` uses a lock-free ring buffer to enqueue parameter updates (such as EQ slider adjustments) without blocking the realtime audio thread.

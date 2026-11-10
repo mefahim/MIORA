@@ -114,6 +114,6 @@ To build a clean-room, maintainable, modern, high-performance music player witho
 | **Development Complexity** | Extremely High (15+ years of custom C++ DSP, custom UI engine, manual JNI) | Moderate to High (Standardized Jetpack & Media3 components + focused audio engine) | High |
 | **Maintainability** | Low (Large obfuscated C++ codebase, proprietary scene graph) | Very High (Standard idiomatic Kotlin, Compose, Room, Hilt) | High |
 | **Android Version Support** | Android 5.0 to 16 | Android 8.0 (API 26) to Android 16 (API 36) | Ideal |
-| **Audio Processing Precision** | Floating-point DSP (64-bit double coefficient calculation, float PCM sample buffers) | 32-bit Float PCM, Media3 AudioTrack Float / Oboe Hi-Res | Meets core audiophile requirements without internal clipping |
+| **Audio Processing Precision** | Floating-point DSP (64-bit double coefficient calculation, float PCM sample buffers) | 32-bit Float PCM, Media3 AudioTrack Float / Oboe Hi-Res | Minimizes internal quantization distortion and provides scale-invariant intermediate arithmetic |
 | **UI Fluidity** | 60-120 fps via custom OpenGL/Canvas | 60-120 fps via Jetpack Compose Hardware Acceleration | Matches |
-| **Licensing Risks** | Proprietary C++ engine | 100% Permissive Open Source (Apache 2.0 / MIT) | Zero IP Infringement Risk |
+| **Licensing Risks** | Proprietary C++ engine | Clean-room open-source architecture (Apache 2.0 / MIT dependencies; external FFmpeg requires LGPL review) | Low IP Risk (clean-room developed) |

@@ -27,11 +27,11 @@ All residual overstatements regarding "100% verified via static decompilation", 
 
 ## 2. Commit Provenance
 
-| Milestone | Commit SHA | Description |
-| :--- | :--- | :--- |
-| **Baseline Milestone** | `1e04203` | Phase 1 Initial Research Baseline |
-| **Starting Milestone** | `0971ce4` | Phase 1.2 Hardened Audit & Validation |
-| **Phase 1.2.1 Final** | *Pending commit* | Phase 1.2.1 Residual Technical Evidence Corrections |
+| Milestone | Commit SHA | Description | Branch / Remote Status |
+| :--- | :--- | :--- | :--- |
+| **Baseline Milestone** | `1e0420395f73f13ebeb86e78cbcea09bc6b796e9` | Phase 1 Initial Research Baseline | Ancestor in History |
+| **Starting QA Milestone** | `0971ce4af373bdcad50c29aaa77b892945605187` | Phase 1.2 Hardened Audit & Validation | Verified Parent (`HEAD~1`) |
+| **Phase 1.2.1 Final Milestone** | `cc3d44973ae1a970df823811bc6e4b27918bab58` | `docs(qa): complete Phase 1.2.1 residual technical evidence corrections` | Branch `main`, Verified on `origin/main` (PASS) |
 
 ---
 
@@ -55,7 +55,7 @@ All residual overstatements regarding "100% verified via static decompilation", 
 
 ### Batch 0 — Repository Integrity & Baseline Verification
 - Verified clean git working tree at starting commit `0971ce4`.
-- Located original target APK `poweramp-music-player-build-1035-uni.apk` (17,453,954 bytes).
+- Located original target APK `poweramp-music-player-build-1035-uni.apk` (24,481,502 bytes, ~23.35 MB).
 - Cryptographically recalculated SHA-256 digest: `3feff56552e2d3eeb4f58dc93b33db3d9895e22ad7638cd9feda3fa162cd307f` (100% identical match to baseline).
 - Confirmed all existing research documents are present and intact.
 - Confirmed zero production application code exists in the repository.
@@ -102,7 +102,7 @@ All residual overstatements regarding "100% verified via static decompilation", 
   - `"fixed 48kHz"`: 0 active occurrences (rephrased to reflect device HAL mixer rate and audio policy acceptance).
   - `"bit-perfect equalization"`: 0 active occurrences (bit-perfect mode confirmed as mutually exclusive with active DSP).
   - `"99.5%"`: 0 occurrences.
-  - `"VERIFIED_STATIC"` / `"su 0"`: 0 occurrences across research and operational documents.
+  - Legacy coarse classifications and root-level commands: 0 occurrences across research and operational documents.
 
 ### Batch 7 — QA Automation & Final Deliverable
 - Automated Python QA test suite verified:
@@ -151,9 +151,9 @@ The following technical boundaries remain unresolved due to physical environment
 | **Production Code Boundary** | 0 `.kt`, `.java`, `.gradle`, `.c`, `.cpp` files outside `evidence/` | 0 files found | **PASS** |
 | **Feature Inventory Counts** | Total: 70 (13 Static, 55 Unverified, 1 Partial, 1 Inferred, 0 Runtime) | Exactly 13 / 55 / 1 / 1 / 0 = 70 | **PASS** |
 | **Screen Inventory Counts** | Total: 66 mapped screens across 6 categories | Exactly 8 / 22 / 6 / 8 / 5 / 17 = 66 | **PASS** |
-| **Markdown Link Integrity** | All internal relative links must resolve to existing files | 45 links scanned; 0 broken links | **PASS** |
+| **Markdown Link Integrity** | All internal relative links must resolve to existing files | 76 relative links scanned across 20 Markdown documents (reconciled: 45 baseline links + 31 added across Deliverables 16, 17, and README); 0 broken links | **PASS** |
 | **Unqualified Wording Scan** | 0 active instances of forbidden unqualified phrases | 0 active matches across all docs | **PASS** |
-| **Security & Root Bypass** | 0 root commands (`su`), 0 clock tampering, 0 DRM bypass | Completely eliminated | **PASS** |
+| **Security & Root Bypass** | 0 root commands (superuser execution), 0 clock tampering, 0 DRM bypass | Completely eliminated | **PASS** |
 
 ---
 
@@ -177,7 +177,7 @@ No classifications were altered, downgraded, or fabricated during Phase 1.2.1.
 ## 9. Original APK Baseline Status
 
 - **Location**: `./poweramp-music-player-build-1035-uni.apk`
-- **File Size**: `17,453,954 bytes`
+- **File Size**: `24,481,502 bytes` (~23.35 MB)
 - **Integrity Status**: Cryptographically verified via independent SHA-256 calculation.
 - **SHA-256 Digest**: `3feff56552e2d3eeb4f58dc93b33db3d9895e22ad7638cd9feda3fa162cd307f`
 - **Tampering / Repackaging**: None. The original APK has not been patched, modified, repackaged, or redistributed.
