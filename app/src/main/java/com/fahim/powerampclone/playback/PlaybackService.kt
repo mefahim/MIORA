@@ -8,19 +8,28 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.provider.MediaStore
+import android.util.Size
 import com.fahim.powerampclone.MainActivity
 import com.fahim.powerampclone.R
+import com.fahim.powerampclone.data.local.MediaStoreMusicRepository
 import com.fahim.powerampclone.model.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 class PlaybackService : Service() {
 
@@ -51,31 +60,36 @@ class PlaybackService : Service() {
         }
     }
 
+    private fun getOrCreatePlaybackManager(): PlaybackManager {
+        return PlaybackManager.currentInstance()
+            ?: PlaybackManager.getInstance(applicationContext, MediaStoreMusicRepository(applicationContext))
+    }
+
     private fun initMediaSession() {
         mediaSession = MediaSession(this, "MioraMediaSession").apply {
             setCallback(object : MediaSession.Callback() {
                 override fun onPlay() {
-                    PlaybackManager.currentInstance()?.togglePlayPause()
+                    getOrCreatePlaybackManager().togglePlayPause()
                 }
 
                 override fun onPause() {
-                    PlaybackManager.currentInstance()?.togglePlayPause()
+                    getOrCreatePlaybackManager().togglePlayPause()
                 }
 
                 override fun onSkipToNext() {
-                    PlaybackManager.currentInstance()?.next()
+                    getOrCreatePlaybackManager().next()
                 }
 
                 override fun onSkipToPrevious() {
-                    PlaybackManager.currentInstance()?.previous()
+                    getOrCreatePlaybackManager().previous()
                 }
 
                 override fun onSeekTo(pos: Long) {
-                    PlaybackManager.currentInstance()?.seekTo(pos)
+                    getOrCreatePlaybackManager().seekTo(pos)
                 }
 
                 override fun onStop() {
-                    PlaybackManager.currentInstance()?.togglePlayPause()
+                    getOrCreatePlaybackManager().togglePlayPause()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 }
@@ -86,13 +100,16 @@ class PlaybackService : Service() {
 
     private fun observePlaybackManager() {
         stateObserverJob?.cancel()
+        val manager = getOrCreatePlaybackManager()
         stateObserverJob = scope.launch {
-            PlaybackManager.currentInstance()?.state?.collect { state ->
+            manager.state.collect { state ->
                 val track = state.currentTrack
-                updateMediaSessionState(state.isPlaying, state.positionMs, track?.durationMs ?: 0L)
+                val duration = if (state.durationMs > 0L) state.durationMs else (track?.durationMs ?: 0L)
+                updateMediaSessionState(state.isPlaying, state.positionMs, duration)
                 if (track != null) {
-                    updateMediaSessionMetadata(track)
-                    val notification = buildNotification(track, state.isPlaying)
+                    val artworkBitmap = getTrackArtworkBitmap(track)
+                    updateMediaSessionMetadata(track, duration, artworkBitmap)
+                    val notification = buildNotification(track, state.isPlaying, artworkBitmap)
                     if (state.isPlaying) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
@@ -126,17 +143,68 @@ class PlaybackService : Service() {
         mediaSession.setPlaybackState(stateBuilder.build())
     }
 
-    private fun updateMediaSessionMetadata(track: Track) {
-        val metadata = MediaMetadata.Builder()
+    private fun updateMediaSessionMetadata(track: Track, durationMs: Long, artwork: Bitmap?) {
+        val metadataBuilder = MediaMetadata.Builder()
             .putString(MediaMetadata.METADATA_KEY_TITLE, track.title)
             .putString(MediaMetadata.METADATA_KEY_ARTIST, track.artist)
             .putString(MediaMetadata.METADATA_KEY_ALBUM, track.album)
-            .putLong(MediaMetadata.METADATA_KEY_DURATION, track.durationMs)
-            .build()
-        mediaSession.setMetadata(metadata)
+            .putLong(MediaMetadata.METADATA_KEY_DURATION, durationMs)
+
+        if (artwork != null) {
+            metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, artwork)
+            metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ART, artwork)
+        }
+        mediaSession.setMetadata(metadataBuilder.build())
     }
 
-    private fun buildNotification(track: Track, isPlaying: Boolean): Notification {
+    private fun getTrackArtworkBitmap(track: Track): Bitmap {
+        if (!track.artworkUriString.isNullOrBlank()) {
+            try {
+                val uri = Uri.parse(track.artworkUriString)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    return contentResolver.loadThumbnail(uri, Size(320, 320), null)
+                } else {
+                    @Suppress("DEPRECATION")
+                    val bm = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                    if (bm != null) return bm
+                }
+            } catch (_: Exception) {}
+        }
+
+        if (track.contentUriString.isNotBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                return contentResolver.loadThumbnail(Uri.parse(track.contentUriString), Size(320, 320), null)
+            } catch (_: Exception) {}
+        }
+
+        return createFallbackArtworkBitmap(track)
+    }
+
+    private fun createFallbackArtworkBitmap(track: Track): Bitmap {
+        val size = 256
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        val h = abs(track.artworkSeed.hashCode()) % 360
+        val hsv = floatArrayOf(h.toFloat(), 0.65f, 0.35f)
+        paint.color = Color.HSVToColor(hsv)
+        canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
+
+        paint.color = Color.argb(45, 255, 255, 255)
+        canvas.drawCircle((size / 2).toFloat(), (size / 2).toFloat(), (size * 0.35f), paint)
+
+        paint.color = Color.WHITE
+        paint.textSize = 80f
+        paint.textAlign = Paint.Align.CENTER
+        val letter = track.title.trim().take(1).uppercase().ifEmpty { "M" }
+        val yPos = (size / 2 - (paint.descent() + paint.ascent()) / 2)
+        canvas.drawText(letter, (size / 2).toFloat(), yPos, paint)
+
+        return bitmap
+    }
+
+    private fun buildNotification(track: Track, isPlaying: Boolean, artwork: Bitmap): Notification {
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
@@ -183,7 +251,10 @@ class PlaybackService : Service() {
         return builder
             .setContentTitle(track.title)
             .setContentText("${track.artist} • ${track.album}")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification_music)
+            .setLargeIcon(artwork)
+            .setColor(0xFF0F766E.toInt())
+            .setColorized(true)
             .setContentIntent(contentIntent)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setStyle(
@@ -218,11 +289,11 @@ class PlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_PLAY_PAUSE -> PlaybackManager.currentInstance()?.togglePlayPause()
-            ACTION_NEXT -> PlaybackManager.currentInstance()?.next()
-            ACTION_PREVIOUS -> PlaybackManager.currentInstance()?.previous()
+            ACTION_PLAY_PAUSE -> getOrCreatePlaybackManager().togglePlayPause()
+            ACTION_NEXT -> getOrCreatePlaybackManager().next()
+            ACTION_PREVIOUS -> getOrCreatePlaybackManager().previous()
             ACTION_STOP -> {
-                PlaybackManager.currentInstance()?.togglePlayPause()
+                getOrCreatePlaybackManager().togglePlayPause()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }

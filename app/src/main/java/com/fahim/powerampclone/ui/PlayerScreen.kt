@@ -55,6 +55,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -126,7 +130,8 @@ fun NowPlayingScreen(
                 return@Box
             }
 
-            val progress = if (track.durationMs > 0) state.positionMs.toFloat() / track.durationMs else 0f
+            val currentDuration = state.currentDurationMs
+            val progress = if (currentDuration > 0L) (state.positionMs.toFloat() / currentDuration).coerceIn(0f, 1f) else 0f
             val favoriteScale by animateFloatAsState(
                 if (track.id in state.favorites) 1.2f else 1f,
                 animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -240,10 +245,28 @@ private fun PlayerControlsColumn(
 
         Spacer(Modifier.height(Spacing.md))
 
+        val currentDuration = state.currentDurationMs
+        var isUserSeeking by remember { mutableStateOf(false) }
+        var userSeekProgress by remember { mutableFloatStateOf(0f) }
+
+        val activeProgress = if (isUserSeeking) {
+            userSeekProgress
+        } else {
+            if (currentDuration > 0L) (state.positionMs.toFloat() / currentDuration).coerceIn(0f, 1f) else 0f
+        }
+
         // Progress Slider
         Slider(
-            value = progress,
-            onValueChange = { playerViewModel.seekTo((it * track.durationMs).toLong()) },
+            value = activeProgress,
+            onValueChange = {
+                isUserSeeking = true
+                userSeekProgress = it
+            },
+            onValueChangeFinished = {
+                val targetMs = (userSeekProgress * currentDuration).toLong()
+                playerViewModel.seekTo(targetMs)
+                isUserSeeking = false
+            },
             colors = SliderDefaults.colors(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -253,14 +276,15 @@ private fun PlayerControlsColumn(
         )
 
         // Elapsed and Remaining Time
+        val currentDisplayPos = if (isUserSeeking) (userSeekProgress * currentDuration).toLong() else state.positionMs
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
-                text = formatDuration(state.positionMs),
+                text = formatDuration(currentDisplayPos),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "-${formatDuration((track.durationMs - state.positionMs).coerceAtLeast(0))}",
+                text = "-${formatDuration((currentDuration - currentDisplayPos).coerceAtLeast(0))}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -397,7 +421,8 @@ fun MiniPlayer(
 ) {
     val state by playerViewModel.state.collectAsState()
     val track = state.currentTrack ?: return
-    val progress = if (track.durationMs > 0) state.positionMs.toFloat() / track.durationMs else 0f
+    val currentDuration = state.currentDurationMs
+    val progress = if (currentDuration > 0L) (state.positionMs.toFloat() / currentDuration).coerceIn(0f, 1f) else 0f
 
     Surface(
         modifier = modifier

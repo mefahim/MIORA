@@ -297,7 +297,7 @@ fun HomeScreen(
                                 .width(132.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .clickable {
-                                    playerViewModel.playTrack(track)
+                                    playerViewModel.playTrack(track, recentTracks)
                                     onOpenPlayer()
                                 },
                         ) {
@@ -402,10 +402,11 @@ fun HomeScreen(
             }
 
             // Continue Listening Track List
+            val continueList = libraryViewModel.sortedTracks().take(6)
             item {
                 SectionHeader("Continue listening", "See all") { onNavigate(Routes.SONGS) }
             }
-            items(libraryViewModel.sortedTracks().take(6)) { track ->
+            items(continueList) { track ->
                 TrackRow(
                     title = track.title,
                     subtitle = "${track.artist} • ${track.album}",
@@ -416,11 +417,11 @@ fun HomeScreen(
                     isFavorite = track.id in playerState.favorites,
                     isSelected = false,
                     onClick = {
-                        playerViewModel.playTrack(track)
+                        playerViewModel.playTrack(track, continueList)
                         onOpenPlayer()
                     },
                     onMoreClick = {
-                        playerViewModel.playTrack(track)
+                        playerViewModel.playTrack(track, continueList)
                     },
                     modifier = Modifier.padding(horizontal = Spacing.sm),
                 )

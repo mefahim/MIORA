@@ -329,10 +329,10 @@ fun SongsScreen(
                         isSelected = track.id in state.selectedIds,
                         onClick = {
                             if (state.selectionMode) libraryViewModel.toggleSelect(track.id)
-                            else { playerViewModel.playTrack(track); onOpenPlayer() }
+                            else { playerViewModel.playTrack(track, tracks); onOpenPlayer() }
                         },
                         onLongClick = { libraryViewModel.toggleSelect(track.id) },
-                        onMoreClick = { playerViewModel.playTrack(track) },
+                        onMoreClick = { playerViewModel.playTrack(track, tracks) },
                         modifier = Modifier.padding(horizontal = Spacing.sm),
                     )
                 }
@@ -544,7 +544,8 @@ fun FoldersScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    libraryViewModel.tracksByIds(folder.trackIds).forEach { track ->
+                    val folderTracks = libraryViewModel.tracksByIds(folder.trackIds)
+                    folderTracks.forEach { track ->
                         TrackRow(
                             title = track.title,
                             subtitle = track.artist,
@@ -554,8 +555,8 @@ fun FoldersScreen(
                             isPlaying = playerState.currentTrack?.id == track.id && playerState.isPlaying,
                             isFavorite = track.id in playerState.favorites,
                             isSelected = false,
-                            onClick = { playerViewModel.playTrack(track); onOpenPlayer() },
-                            onMoreClick = { playerViewModel.playTrack(track) },
+                            onClick = { playerViewModel.playTrack(track, folderTracks); onOpenPlayer() },
+                            onMoreClick = { playerViewModel.playTrack(track, folderTracks) },
                             modifier = Modifier.padding(start = Spacing.md),
                         )
                     }
@@ -605,7 +606,8 @@ fun GenresScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    libraryViewModel.tracksByIds(genre.trackIds).forEach { track ->
+                    val genreTracks = libraryViewModel.tracksByIds(genre.trackIds)
+                    genreTracks.forEach { track ->
                         TrackRow(
                             title = track.title,
                             subtitle = track.artist,
@@ -615,8 +617,8 @@ fun GenresScreen(
                             isPlaying = playerState.currentTrack?.id == track.id && playerState.isPlaying,
                             isFavorite = track.id in playerState.favorites,
                             isSelected = false,
-                            onClick = { playerViewModel.playTrack(track); onOpenPlayer() },
-                            onMoreClick = { playerViewModel.playTrack(track) },
+                            onClick = { playerViewModel.playTrack(track, genreTracks); onOpenPlayer() },
+                            onMoreClick = { playerViewModel.playTrack(track, genreTracks) },
                             modifier = Modifier.padding(start = Spacing.sm),
                         )
                     }

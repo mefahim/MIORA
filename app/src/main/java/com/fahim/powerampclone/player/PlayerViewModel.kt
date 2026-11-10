@@ -23,12 +23,14 @@ data class PlayerUiState(
     val currentIndex: Int = 0,
     val isPlaying: Boolean = false,
     val positionMs: Long = 0L,
+    val durationMs: Long = 0L,
     val shuffle: Boolean = false,
     val repeat: RepeatMode = RepeatMode.OFF,
     val favorites: Set<Long> = emptySet(),
     val queueOrder: List<Long> = emptyList(),
 ) {
     val currentTrack: Track? get() = queue.getOrNull(currentIndex)
+    val currentDurationMs: Long get() = if (durationMs > 0L) durationMs else (currentTrack?.durationMs ?: 0L)
     val upNext: List<Track> get() = if (queue.isEmpty()) emptyList() else queue.drop(currentIndex + 1)
 }
 
@@ -48,6 +50,7 @@ class PlayerViewModel(
                     queue = tracks,
                     queueOrder = tracks.map { t -> t.id },
                     favorites = tracks.filter { t -> t.isFavorite }.map { t -> t.id }.toSet(),
+                    durationMs = tracks.firstOrNull()?.durationMs ?: 0L,
                 )
             }
         }
@@ -58,9 +61,22 @@ class PlayerViewModel(
             playbackManager.playTrack(track, queue)
             return
         }
-        val newQueue = queue ?: _state.value.queue
-        val index = newQueue.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } ?: 0
-        _state.update { it.copy(queue = newQueue, queueOrder = newQueue.map { t -> t.id }, currentIndex = index, positionMs = 0L, isPlaying = true) }
+        val effectiveQueue = when {
+            queue != null && queue.isNotEmpty() -> queue
+            _state.value.queue.any { it.id == track.id } -> _state.value.queue
+            else -> listOf(track) + _state.value.queue
+        }
+        val index = effectiveQueue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
+        _state.update {
+            it.copy(
+                queue = effectiveQueue,
+                queueOrder = effectiveQueue.map { t -> t.id },
+                currentIndex = index,
+                positionMs = 0L,
+                durationMs = track.durationMs,
+                isPlaying = true,
+            )
+        }
         startTicker()
     }
 
@@ -81,8 +97,21 @@ class PlayerViewModel(
         }
         val s = _state.value
         if (s.queue.isEmpty()) return
-        val nextIndex = if (s.shuffle) s.queue.indices.filter { it != s.currentIndex }.random() else (s.currentIndex + 1) % s.queue.size
-        _state.update { it.copy(currentIndex = nextIndex, positionMs = 0L, isPlaying = true) }
+        val nextIndex = if (s.shuffle) {
+            val candidates = s.queue.indices.filter { it != s.currentIndex }
+            if (candidates.isNotEmpty()) candidates.random() else 0
+        } else {
+            (s.currentIndex + 1) % s.queue.size
+        }
+        val nextTrack = s.queue[nextIndex]
+        _state.update {
+            it.copy(
+                currentIndex = nextIndex,
+                positionMs = 0L,
+                durationMs = nextTrack.durationMs,
+                isPlaying = true,
+            )
+        }
         startTicker()
     }
 
@@ -95,7 +124,15 @@ class PlayerViewModel(
         if (s.queue.isEmpty()) return
         if (s.positionMs > 3000L) { seekTo(0L); return }
         val prevIndex = if (s.currentIndex == 0) s.queue.size - 1 else s.currentIndex - 1
-        _state.update { it.copy(currentIndex = prevIndex, positionMs = 0L, isPlaying = true) }
+        val prevTrack = s.queue[prevIndex]
+        _state.update {
+            it.copy(
+                currentIndex = prevIndex,
+                positionMs = 0L,
+                durationMs = prevTrack.durationMs,
+                isPlaying = true,
+            )
+        }
         startTicker()
     }
 
@@ -104,8 +141,9 @@ class PlayerViewModel(
             playbackManager.seekTo(positionMs)
             return
         }
-        val track = _state.value.currentTrack ?: return
-        _state.update { it.copy(positionMs = positionMs.coerceIn(0L, track.durationMs)) }
+        val dur = _state.value.currentDurationMs
+        val clamped = if (dur > 0L) positionMs.coerceIn(0L, dur) else positionMs.coerceAtLeast(0L)
+        _state.update { it.copy(positionMs = clamped) }
     }
 
     fun toggleShuffle() {
@@ -145,13 +183,15 @@ class PlayerViewModel(
         }
         val s = _state.value
         if (fromIndex !in s.queue.indices || toIndex !in s.queue.indices || fromIndex == toIndex) return
+        val currentTrackId = s.currentTrack?.id
         val mutable = s.queue.toMutableList()
         val item = mutable.removeAt(fromIndex)
         mutable.add(toIndex, item)
-        var newIndex = s.currentIndex
-        if (fromIndex == s.currentIndex) newIndex = toIndex
-        else if (fromIndex < s.currentIndex && toIndex >= s.currentIndex) newIndex -= 1
-        else if (fromIndex > s.currentIndex && toIndex <= s.currentIndex) newIndex += 1
+        val newIndex = if (currentTrackId != null) {
+            mutable.indexOfFirst { it.id == currentTrackId }.takeIf { it >= 0 } ?: 0
+        } else {
+            0
+        }
         _state.update { it.copy(queue = mutable, queueOrder = mutable.map { t -> t.id }, currentIndex = newIndex) }
     }
 
@@ -162,12 +202,24 @@ class PlayerViewModel(
         }
         val s = _state.value
         if (index !in s.queue.indices || s.queue.size <= 1) return
+        val wasCurrent = (index == s.currentIndex)
+        val currentId = s.currentTrack?.id
         val mutable = s.queue.toMutableList()
         mutable.removeAt(index)
-        var newIndex = s.currentIndex
-        if (index < s.currentIndex) newIndex -= 1
-        else if (index == s.currentIndex) newIndex = newIndex.coerceAtMost(mutable.size - 1)
-        _state.update { it.copy(queue = mutable, queueOrder = mutable.map { t -> t.id }, currentIndex = newIndex, positionMs = if (index == s.currentIndex) 0L else s.positionMs) }
+        val newIndex = if (currentId != null && !wasCurrent) {
+            mutable.indexOfFirst { it.id == currentId }.takeIf { it >= 0 } ?: 0
+        } else {
+            index.coerceAtMost(mutable.size - 1)
+        }
+        _state.update {
+            it.copy(
+                queue = mutable,
+                queueOrder = mutable.map { t -> t.id },
+                currentIndex = newIndex,
+                positionMs = if (wasCurrent) 0L else s.positionMs,
+                durationMs = if (wasCurrent) mutable[newIndex].durationMs else s.durationMs,
+            )
+        }
     }
 
     fun clearQueue() {
@@ -206,6 +258,7 @@ class PlayerViewModel(
                 queue = tracks,
                 queueOrder = tracks.map { it.id },
                 currentIndex = newIndex,
+                durationMs = tracks[newIndex].durationMs,
             )
         }
     }
@@ -217,14 +270,15 @@ class PlayerViewModel(
                 delay(500L)
                 val s = _state.value
                 if (!s.isPlaying) break
-                val track = s.currentTrack ?: break
+                val dur = s.currentDurationMs
+                if (dur <= 0L) break
                 val nextPos = s.positionMs + 500L
-                if (nextPos >= track.durationMs) {
+                if (nextPos >= dur) {
                     when (s.repeat) {
                         RepeatMode.ONE -> _state.update { it.copy(positionMs = 0L) }
                         RepeatMode.ALL -> next()
                         RepeatMode.OFF -> {
-                            if (s.currentIndex >= s.queue.size - 1) _state.update { it.copy(isPlaying = false, positionMs = track.durationMs) } else next()
+                            if (s.currentIndex >= s.queue.size - 1) _state.update { it.copy(isPlaying = false, positionMs = dur) } else next()
                         }
                     }
                 } else {

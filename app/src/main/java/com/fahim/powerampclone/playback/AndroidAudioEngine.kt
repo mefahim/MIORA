@@ -46,8 +46,10 @@ class AndroidAudioEngine(
 
     private var isRealPlayback = false
     private var isPrepared = false
+    private var isSeeking = false
     private var pausedDueToTransientFocusLoss = false
     private var isNoisyReceiverRegistered = false
+    private var currentPlaybackToken = 0L
 
     private val audioAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -94,12 +96,19 @@ class AndroidAudioEngine(
     }
 
     private fun initMediaPlayer() {
-        mediaPlayer?.release()
+        try {
+            mediaPlayer?.release()
+        } catch (_: Exception) {}
+
         mediaPlayer = MediaPlayer().apply {
             setAudioAttributes(audioAttributes)
             setOnPreparedListener { mp ->
+                if (currentPlaybackToken == 0L) return@setOnPreparedListener
                 isPrepared = true
-                _durationMs.value = mp.duration.toLong()
+                val realDuration = mp.duration.toLong()
+                if (realDuration > 0L) {
+                    _durationMs.value = realDuration
+                }
                 if (requestAudioFocus()) {
                     mp.start()
                     _isPlaying.value = true
@@ -112,30 +121,49 @@ class AndroidAudioEngine(
                 unregisterNoisyReceiver()
                 onCompletionListener?.invoke()
             }
+            setOnSeekCompleteListener {
+                isSeeking = false
+            }
             setOnErrorListener { _, what, extra ->
                 _playbackError.value = "MediaPlayer error ($what, $extra)"
                 _isPlaying.value = false
+                isPrepared = false
                 unregisterNoisyReceiver()
+                try {
+                    mediaPlayer?.reset()
+                } catch (_: Exception) {
+                    initMediaPlayer()
+                }
                 true
             }
         }
     }
 
+    @Synchronized
     override fun play(track: Track) {
+        val token = ++currentPlaybackToken
         positionTrackerJob?.cancel()
         _playbackError.value = null
         _currentPositionMs.value = 0L
         _durationMs.value = track.durationMs
         isPrepared = false
+        isSeeking = false
 
         if (track.contentUriString.isNotBlank()) {
             try {
                 isRealPlayback = true
                 if (mediaPlayer == null) initMediaPlayer()
-                mediaPlayer?.reset()
-                mediaPlayer?.setAudioAttributes(audioAttributes)
-                mediaPlayer?.setDataSource(context, Uri.parse(track.contentUriString))
-                mediaPlayer?.prepareAsync()
+                val player = mediaPlayer ?: MediaPlayer().also { mediaPlayer = it }
+                try {
+                    player.reset()
+                } catch (e: Exception) {
+                    initMediaPlayer()
+                }
+                mediaPlayer?.apply {
+                    setAudioAttributes(audioAttributes)
+                    setDataSource(context, Uri.parse(track.contentUriString))
+                    prepareAsync()
+                }
                 return
             } catch (e: Exception) {
                 _playbackError.value = "Failed to load audio: ${e.message}"
@@ -185,6 +213,7 @@ class AndroidAudioEngine(
         }
         _isPlaying.value = false
         _currentPositionMs.value = 0L
+        isPrepared = false
         abandonAudioFocus()
         unregisterNoisyReceiver()
         positionTrackerJob?.cancel()
@@ -194,19 +223,24 @@ class AndroidAudioEngine(
         val bounded = positionMs.coerceIn(0L, _durationMs.value.coerceAtLeast(0L))
         _currentPositionMs.value = bounded
         if (isRealPlayback && isPrepared) {
+            isSeeking = true
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     mediaPlayer?.seekTo(bounded, MediaPlayer.SEEK_CLOSEST)
                 } else {
                     mediaPlayer?.seekTo(bounded.toInt())
                 }
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+                isSeeking = false
+            }
         }
     }
 
     override fun setVolume(volume: Float) {
         val clamped = volume.coerceIn(0f, 1f)
-        mediaPlayer?.setVolume(clamped, clamped)
+        try {
+            mediaPlayer?.setVolume(clamped, clamped)
+        } catch (_: Exception) {}
     }
 
     override fun setOnCompletionListener(listener: () -> Unit) {
@@ -215,7 +249,9 @@ class AndroidAudioEngine(
 
     override fun release() {
         stop()
-        mediaPlayer?.release()
+        try {
+            mediaPlayer?.release()
+        } catch (_: Exception) {}
         mediaPlayer = null
     }
 
@@ -225,13 +261,16 @@ class AndroidAudioEngine(
             while (_isPlaying.value) {
                 delay(250L)
                 if (isRealPlayback && isPrepared) {
-                    try {
-                        mediaPlayer?.let { mp ->
-                            if (mp.isPlaying) {
-                                _currentPositionMs.value = mp.currentPosition.toLong()
+                    if (!isSeeking) {
+                        try {
+                            mediaPlayer?.let { mp ->
+                                if (mp.isPlaying) {
+                                    val pos = mp.currentPosition.toLong()
+                                    _currentPositionMs.value = pos.coerceIn(0L, _durationMs.value)
+                                }
                             }
-                        }
-                    } catch (_: Exception) {}
+                        } catch (_: Exception) {}
+                    }
                 } else if (!isRealPlayback) {
                     val next = _currentPositionMs.value + 250L
                     if (next >= _durationMs.value && _durationMs.value > 0L) {

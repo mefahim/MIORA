@@ -91,15 +91,22 @@ fun AlbumArt(
     isCircle: Boolean = false,
 ) {
     val shape = if (isCircle) CircleShape else RoundedCornerShape(cornerRadius)
-    val resolvedMotif = motif ?: when (albumId) {
-        1L -> "arcs"
-        2L -> "sunrise"
-        3L -> "neon"
-        4L -> "waves"
-        5L -> "eq"
-        6L -> "skyline"
-        7L -> "orbits"
-        else -> "fallback"
+    val motifs = listOf("arcs", "sunrise", "neon", "waves", "eq", "skyline", "orbits")
+    val resolvedMotif = motif ?: when {
+        albumId != null && albumId in 1L..7L -> when (albumId) {
+            1L -> "arcs"
+            2L -> "sunrise"
+            3L -> "neon"
+            4L -> "waves"
+            5L -> "eq"
+            6L -> "skyline"
+            else -> "orbits"
+        }
+        else -> {
+            val key = albumId ?: (title.hashCode().toLong() xor seed.hashCode().toLong())
+            val idx = abs(key.hashCode()) % motifs.size
+            motifs[idx]
+        }
     }
 
     Box(

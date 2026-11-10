@@ -350,7 +350,7 @@ fun SearchScreen(
                                 isSelected = false,
                                 onClick = {
                                     searchViewModel.submitSearch()
-                                    playerViewModel.playTrack(track)
+                                    playerViewModel.playTrack(track, results.tracks)
                                     onOpenPlayer()
                                 },
                                 modifier = Modifier.padding(horizontal = Spacing.sm),

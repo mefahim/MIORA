@@ -31,6 +31,7 @@ class PlaybackManager(
                 queue = initialTracks,
                 queueOrder = initialTracks.map { t -> t.id },
                 favorites = initialTracks.filter { t -> t.isFavorite }.map { t -> t.id }.toSet(),
+                durationMs = initialTracks.firstOrNull()?.durationMs ?: 0L,
             )
         }
 
@@ -43,6 +44,20 @@ class PlaybackManager(
         scope.launch {
             audioEngine.currentPositionMs.collect { pos ->
                 _state.update { it.copy(positionMs = pos) }
+            }
+        }
+
+        // Sync duration from engine
+        scope.launch {
+            audioEngine.durationMs.collect { dur ->
+                if (dur > 0L) {
+                    _state.update { s ->
+                        val updatedQueue = s.queue.mapIndexed { idx, t ->
+                            if (idx == s.currentIndex && t.durationMs != dur) t.copy(durationMs = dur) else t
+                        }
+                        s.copy(durationMs = dur, queue = updatedQueue)
+                    }
+                }
             }
         }
 
@@ -67,25 +82,31 @@ class PlaybackManager(
                 if (s.currentIndex < s.queue.size - 1) {
                     next()
                 } else {
-                    _state.update { it.copy(isPlaying = false) }
+                    _state.update { it.copy(isPlaying = false, positionMs = 0L) }
+                    audioEngine.stop()
                 }
             }
         }
     }
 
     fun playTrack(track: Track, queue: List<Track>? = null) {
-        val newQueue = queue ?: _state.value.queue
-        val index = newQueue.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } ?: 0
+        val effectiveQueue = when {
+            queue != null && queue.isNotEmpty() -> queue
+            _state.value.queue.any { it.id == track.id } -> _state.value.queue
+            else -> listOf(track) + _state.value.queue
+        }
+        val index = effectiveQueue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
         _state.update {
             it.copy(
-                queue = newQueue,
-                queueOrder = newQueue.map { t -> t.id },
+                queue = effectiveQueue,
+                queueOrder = effectiveQueue.map { t -> t.id },
                 currentIndex = index,
                 positionMs = 0L,
+                durationMs = track.durationMs,
                 isPlaying = true,
             )
         }
-        audioEngine.play(track)
+        audioEngine.play(effectiveQueue[index])
         context?.let { PlaybackService.start(it) }
     }
 
@@ -118,7 +139,14 @@ class PlaybackManager(
         }
 
         val nextTrack = s.queue[nextIndex]
-        _state.update { it.copy(currentIndex = nextIndex, positionMs = 0L, isPlaying = true) }
+        _state.update {
+            it.copy(
+                currentIndex = nextIndex,
+                positionMs = 0L,
+                durationMs = nextTrack.durationMs,
+                isPlaying = true,
+            )
+        }
         audioEngine.play(nextTrack)
         context?.let { PlaybackService.start(it) }
     }
@@ -132,14 +160,21 @@ class PlaybackManager(
         }
         val prevIndex = if (s.currentIndex == 0) s.queue.size - 1 else s.currentIndex - 1
         val prevTrack = s.queue[prevIndex]
-        _state.update { it.copy(currentIndex = prevIndex, positionMs = 0L, isPlaying = true) }
+        _state.update {
+            it.copy(
+                currentIndex = prevIndex,
+                positionMs = 0L,
+                durationMs = prevTrack.durationMs,
+                isPlaying = true,
+            )
+        }
         audioEngine.play(prevTrack)
         context?.let { PlaybackService.start(it) }
     }
 
     fun seekTo(positionMs: Long) {
-        val track = _state.value.currentTrack ?: return
-        val clamped = positionMs.coerceIn(0L, track.durationMs)
+        val dur = _state.value.currentDurationMs
+        val clamped = if (dur > 0L) positionMs.coerceIn(0L, dur) else positionMs.coerceAtLeast(0L)
         _state.update { it.copy(positionMs = clamped) }
         audioEngine.seekTo(clamped)
     }
@@ -170,25 +205,44 @@ class PlaybackManager(
     fun moveQueueItem(fromIndex: Int, toIndex: Int) {
         val s = _state.value
         if (fromIndex !in s.queue.indices || toIndex !in s.queue.indices || fromIndex == toIndex) return
+        val currentTrackId = s.currentTrack?.id
         val mutable = s.queue.toMutableList()
         val item = mutable.removeAt(fromIndex)
         mutable.add(toIndex, item)
-        var newIndex = s.currentIndex
-        if (fromIndex == s.currentIndex) newIndex = toIndex
-        else if (fromIndex < s.currentIndex && toIndex >= s.currentIndex) newIndex -= 1
-        else if (fromIndex > s.currentIndex && toIndex <= s.currentIndex) newIndex += 1
+        val newIndex = if (currentTrackId != null) {
+            mutable.indexOfFirst { it.id == currentTrackId }.takeIf { it >= 0 } ?: 0
+        } else {
+            0
+        }
         _state.update { it.copy(queue = mutable, queueOrder = mutable.map { t -> t.id }, currentIndex = newIndex) }
     }
 
     fun removeQueueItem(index: Int) {
         val s = _state.value
         if (index !in s.queue.indices || s.queue.size <= 1) return
+        val wasCurrent = (index == s.currentIndex)
+        val currentId = s.currentTrack?.id
         val mutable = s.queue.toMutableList()
         mutable.removeAt(index)
-        var newIndex = s.currentIndex
-        if (index < s.currentIndex) newIndex -= 1
-        else if (index == s.currentIndex) newIndex = newIndex.coerceAtMost(mutable.size - 1)
-        _state.update { it.copy(queue = mutable, queueOrder = mutable.map { t -> t.id }, currentIndex = newIndex) }
+        val newIndex = if (currentId != null && !wasCurrent) {
+            mutable.indexOfFirst { it.id == currentId }.takeIf { it >= 0 } ?: 0
+        } else {
+            index.coerceAtMost(mutable.size - 1)
+        }
+        _state.update {
+            it.copy(
+                queue = mutable,
+                queueOrder = mutable.map { t -> t.id },
+                currentIndex = newIndex,
+                positionMs = if (wasCurrent) 0L else s.positionMs,
+                durationMs = if (wasCurrent) mutable[newIndex].durationMs else s.durationMs,
+            )
+        }
+        if (wasCurrent && s.isPlaying) {
+            val nextTrack = mutable[newIndex]
+            audioEngine.play(nextTrack)
+            context?.let { PlaybackService.start(it) }
+        }
     }
 
     fun clearQueue() {
@@ -215,6 +269,7 @@ class PlaybackManager(
                 queue = newTracks,
                 queueOrder = newTracks.map { it.id },
                 currentIndex = newIndex,
+                durationMs = newTracks[newIndex].durationMs,
             )
         }
     }

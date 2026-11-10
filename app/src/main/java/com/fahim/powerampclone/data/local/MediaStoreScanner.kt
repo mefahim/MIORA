@@ -4,7 +4,6 @@ import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.provider.MediaStore
 import com.fahim.powerampclone.model.Track
 import com.fahim.powerampclone.model.seedColorForString
@@ -20,6 +19,9 @@ object MediaStoreScanner {
         }
 
         val tracks = mutableListOf<Track>()
+        val seenIds = HashSet<Long>()
+        val seenPaths = HashSet<String>()
+
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
@@ -32,6 +34,7 @@ object MediaStoreScanner {
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.MIME_TYPE,
+            MediaStore.Audio.Media.DISPLAY_NAME,
         )
 
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 5000"
@@ -58,23 +61,64 @@ object MediaStoreScanner {
                 val yearCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
                 val dataCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
                 val mimeCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+                val nameCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
 
                 while (c.moveToNext()) {
                     val id = c.getLong(idCol)
-                    val title = c.getString(titleCol)?.takeIf { it.isNotBlank() } ?: "Unknown Track"
-                    val artist = c.getString(artistCol)?.takeIf { it.isNotBlank() && it != "<unknown>" } ?: "Unknown Artist"
-                    val album = c.getString(albumCol)?.takeIf { it.isNotBlank() && it != "<unknown>" } ?: "Unknown Album"
+                    if (id in seenIds) continue
+
+                    val data = c.getString(dataCol) ?: ""
+                    val canonicalPath = try {
+                        if (data.isNotBlank()) File(data).canonicalPath else ""
+                    } catch (_: Exception) {
+                        data
+                    }
+
+                    if (canonicalPath.isNotEmpty() && canonicalPath in seenPaths) {
+                        continue
+                    }
+
+                    val displayName = c.getString(nameCol) ?: ""
+                    var rawTitle = c.getString(titleCol)?.trim() ?: ""
+                    var rawArtist = c.getString(artistCol)?.trim() ?: ""
+                    var rawAlbum = c.getString(albumCol)?.trim() ?: ""
+
+                    if (rawArtist.equals("<unknown>", ignoreCase = true) || rawArtist.equals("unknown", ignoreCase = true)) {
+                        rawArtist = ""
+                    }
+                    if (rawAlbum.equals("<unknown>", ignoreCase = true) || rawAlbum.equals("unknown", ignoreCase = true)) {
+                        rawAlbum = ""
+                    }
+
+                    if (rawTitle.isBlank() || rawTitle.equals("<unknown>", ignoreCase = true)) {
+                        rawTitle = if (displayName.isNotBlank()) displayName.substringBeforeLast('.') else "Unknown Track"
+                    }
+
+                    // Attempt clean "Artist - Title" extraction if artist is missing but title has separator
+                    if (rawArtist.isBlank() && rawTitle.contains(" - ")) {
+                        val parts = rawTitle.split(" - ", limit = 2)
+                        rawArtist = parts[0].trim()
+                        rawTitle = parts[1].trim()
+                    }
+
+                    val title = rawTitle.ifBlank { "Unknown Track" }
+                    val artist = rawArtist.ifBlank { "Unknown Artist" }
+                    val album = rawAlbum.ifBlank { "Unknown Album" }
+
                     val albumId = c.getLong(albumIdCol)
                     val artistId = c.getLong(artistIdCol)
                     val durationMs = c.getLong(durationCol)
                     val trackNumber = c.getInt(trackCol).let { if (it >= 1000) it % 1000 else it }
                     val year = c.getInt(yearCol)
-                    val data = c.getString(dataCol) ?: ""
                     val mimeType = c.getString(mimeCol) ?: ""
 
                     val folderPath = try {
-                        val file = File(data)
-                        file.parent ?: "/Music"
+                        if (data.isNotBlank()) {
+                            val file = File(data)
+                            file.parent ?: "/Music"
+                        } else {
+                            "/Music"
+                        }
                     } catch (_: Exception) {
                         "/Music"
                     }
@@ -90,6 +134,13 @@ object MediaStoreScanner {
 
                     val format = parseFormat(data, mimeType)
 
+                    // Distinct artwork seed so different unknown album tracks don't all look identical
+                    val seedKey = if (album != "Unknown Album") album else "$title:$artist:$id"
+                    val artworkSeed = seedColorForString(seedKey)
+
+                    seenIds.add(id)
+                    if (canonicalPath.isNotEmpty()) seenPaths.add(canonicalPath)
+
                     tracks.add(
                         Track(
                             id = id,
@@ -104,7 +155,7 @@ object MediaStoreScanner {
                             genre = "Music",
                             folderPath = folderPath,
                             isFavorite = false,
-                            artworkSeed = seedColorForString(album),
+                            artworkSeed = artworkSeed,
                             format = format,
                             contentUriString = contentUri,
                             artworkUriString = artworkUri,
