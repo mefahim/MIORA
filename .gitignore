@@ -1,0 +1,19 @@
+# Clean-room compliance - exclude proprietary commercial binaries & decompiled sources
+*.apk
+evidence/jadx_src/
+
+# Gradle & Build outputs
+.gradle/
+build/
+**/build/
+app/build/
+*.iml
+.idea/
+local.properties
+.cxx/
+
+# Log files & caches
+*.log
+*.hprof
+.DS_Store
+Thumbs.db

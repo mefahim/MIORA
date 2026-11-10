@@ -1,0 +1,1531 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sharedUserId="com.maxmpz"
+    android:versionCode="1035009"
+    android:versionName="build-1035-uni"
+    android:installLocation="auto"
+    android:compileSdkVersion="36"
+    android:compileSdkVersionCodename="16"
+    android:sharedUserMaxSdkVersion="32"
+    package="com.maxmpz.audioplayer"
+    platformBuildVersionCode="36"
+    platformBuildVersionName="16">
+    <uses-sdk
+        android:minSdkVersion="21"
+        android:targetSdkVersion="36"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <supports-screens
+        android:anyDensity="true"
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:resizeable="true"/>
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false"/>
+    <uses-feature
+        android:glEsVersion="0x20000"
+        android:required="true"/>
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.software.companion_device_setup"
+        android:required="false"/>
+    <permission
+        android:label="@string/permission_access_milk_presets"
+        android:name="com.maxmpz.audioplayer.permission.ACCESS_MILK_PRESETS"
+        android:protectionLevel="dangerous"
+        android:description="@string/desc_permission_access_milk_presets"/>
+    <queries>
+        <package android:name="com.maxmpz.audioplayer.unlock"/>
+        <package android:name="com.maxmpz.audioplayer.huawei"/>
+        <package android:name="moe.shizuku.privileged.api"/>
+        <package android:name="com.genius.android"/>
+        <package android:name="com.geecko.QuickLyric.getLyrics"/>
+        <package android:name="com.musixmatch.android.lyrify"/>
+        <package android:name="com.studiosol.player.letras"/>
+        <package android:name="net.akihiro.walkmanlyricsextension"/>
+        <intent>
+            <action android:name="com.maxmpz.audioplayer.SKIN_MAIN"/>
+        </intent>
+        <intent>
+            <action android:name="com.maxmpz.audioplayer.SKIN_VERIFICATION"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+        </intent>
+        <intent>
+            <action android:name="com.maxmpz.audioplayer.ACTION_NEED_LYRICS"/>
+        </intent>
+        <intent>
+            <action android:name="com.maxmpz.audioplayer.API_COMMAND"/>
+        </intent>
+        <package android:name="com.google.android.gms.policy_cast_dynamite"/>
+        <intent>
+            <action android:name="ru.vk.store.provider.RuStorePaymentInfoProvider"/>
+        </intent>
+        <package android:name="cb.ibank"/>
+        <package android:name="cb.ibank.vuz"/>
+        <package android:name="com.banksoyuz.artsofte"/>
+        <package android:name="com.bifit.atbbank"/>
+        <package android:name="com.bifit.dvbank"/>
+        <package android:name="com.bifit.mobile.citizen.MCBank"/>
+        <package android:name="com.bifit.mobile.citizen.belsocbank"/>
+        <package android:name="com.bifit.mobile.citizen.cfb"/>
+        <package android:name="com.bifit.mobile.citizen.efbank"/>
+        <package android:name="com.bifit.mobile.citizen.icbru"/>
+        <package android:name="com.bifit.mobile.citizen.invb"/>
+        <package android:name="com.bifit.mobile.citizen.kbnk"/>
+        <package android:name="com.bifit.mobile.citizen.mbb"/>
+        <package android:name="com.bifit.mobile.citizen.moskb"/>
+        <package android:name="com.bifit.mobile.citizen.nkbank"/>
+        <package android:name="com.bifit.mobile.citizen.okbank"/>
+        <package android:name="com.bifit.mobile.citizen.tenderbank"/>
+        <package android:name="com.bifit.mobile.citizen.thbank"/>
+        <package android:name="com.bifit.mobile.citizen.zarech"/>
+        <package android:name="com.bifit.mobile.private.bbr"/>
+        <package android:name="com.bifit.nrb"/>
+        <package android:name="com.bifit.pmobile.isbank"/>
+        <package android:name="com.bifit.rncbbeta"/>
+        <package android:name="com.bifit.vfbank"/>
+        <package android:name="com.bpc.crossplatform_trading.bpc_trading"/>
+        <package android:name="com.bssys.aversretail"/>
+        <package android:name="com.bssys.gutaretail"/>
+        <package android:name="com.bssys.novikomretail"/>
+        <package android:name="com.bssys.roscapretail"/>
+        <package android:name="com.bssys.stroylesretail"/>
+        <package android:name="com.bssys.uralfdretail"/>
+        <package android:name="com.bssys.vbrrretail"/>
+        <package android:name="com.cetelem.cetelem_android"/>
+        <package android:name="com.citibank.mobile.ru"/>
+        <package android:name="com.compassplus.mobicash.customer"/>
+        <package android:name="com.credituralbank.CUBmobilenew"/>
+        <package android:name="com.energobank.digital"/>
+        <package android:name="com.finservice.mobile"/>
+        <package android:name="com.hicebank.android"/>
+        <package android:name="com.idamob.tinkoff.android"/>
+        <package android:name="com.idamobile.android.LockoBank"/>
+        <package android:name="com.inbank.mobilebank"/>
+        <package android:name="com.intervale.sbp.atlas"/>
+        <package android:name="com.isimplelab.ibank.chelind"/>
+        <package android:name="com.isimplelab.ibank.kubankredit"/>
+        <package android:name="com.isimplelab.ibank.solidarnost"/>
+        <package android:name="com.isimplelab.ibank.toyota"/>
+        <package android:name="com.isimplelab.ionic.gorbank.prod"/>
+        <package android:name="com.isimplelab.ionic.kazan.fl"/>
+        <package android:name="com.isimplelab.ionic.round.prod"/>
+        <package android:name="com.isimplelab.ionic.slavia.prod"/>
+        <package android:name="com.isimplelab.ionic.standart"/>
+        <package android:name="com.isimplelab.isimpleceo.uglemet"/>
+        <package android:name="com.isimplelab.isimplemobile.payjet"/>
+        <package android:name="com.ltech.unistream"/>
+        <package android:name="com.metkombank.mobile"/>
+        <package android:name="com.mifors.izhcombank"/>
+        <package android:name="com.mmonline.mobile"/>
+        <package android:name="com.mob.android"/>
+        <package android:name="com.openbank"/>
+        <package android:name="com.openwaygroup.ic.panda.poidem"/>
+        <package android:name="com.priobank.prio"/>
+        <package android:name="com.smp.android"/>
+        <package android:name="com.snb.online"/>
+        <package android:name="com.tatsotsbank.dbomobile"/>
+        <package android:name="com.timerbank.retail"/>
+        <package android:name="com.tochka.bank"/>
+        <package android:name="com.yandex.bank"/>
+        <package android:name="cz.bsc.rc"/>
+        <package android:name="logo.com.mbanking"/>
+        <package android:name="ru.akbars.mobile"/>
+        <package android:name="ru.albank.online.aebit"/>
+        <package android:name="ru.alfabank.mobile.android"/>
+        <package android:name="ru.artsofte.russiafl"/>
+        <package android:name="ru.avangard.sbp_client"/>
+        <package android:name="ru.bank_hlynov.xbank"/>
+        <package android:name="ru.bankuralsib.mb.android"/>
+        <package android:name="ru.bcs.bcsbank"/>
+        <package android:name="ru.briginvest.sense"/>
+        <package android:name="ru.bspb"/>
+        <package android:name="ru.centrinvest.mobilebanking2018"/>
+        <package android:name="ru.chelyabinvestbank.investpay"/>
+        <package android:name="ru.elplat.elplat2"/>
+        <package android:name="ru.emb.android"/>
+        <package android:name="ru.faktura.avtograd.person"/>
+        <package android:name="ru.finambank.app"/>
+        <package android:name="ru.ftc.faktura.absolutbank"/>
+        <package android:name="ru.ftc.faktura.agropromkredit"/>
+        <package android:name="ru.ftc.faktura.agroros"/>
+        <package android:name="ru.ftc.faktura.akcept"/>
+        <package android:name="ru.ftc.faktura.akibank"/>
+        <package android:name="ru.ftc.faktura.alefbank"/>
+        <package android:name="ru.ftc.faktura.alexbank"/>
+        <package android:name="ru.ftc.faktura.baikalinvestbank"/>
+        <package android:name="ru.ftc.faktura.banksaratov"/>
+        <package android:name="ru.ftc.faktura.bgfbank"/>
+        <package android:name="ru.ftc.faktura.derzhava"/>
+        <package android:name="ru.ftc.faktura.dolinsk"/>
+        <package android:name="ru.ftc.faktura.etbank"/>
+        <package android:name="ru.ftc.faktura.expobank"/>
+        <package android:name="ru.ftc.faktura.finbank"/>
+        <package android:name="ru.ftc.faktura.forshtadt"/>
+        <package android:name="ru.ftc.faktura.gaztransbank"/>
+        <package android:name="ru.ftc.faktura.intesabank"/>
+        <package android:name="ru.ftc.faktura.iturup"/>
+        <package android:name="ru.ftc.faktura.jtbank"/>
+        <package android:name="ru.ftc.faktura.kbb"/>
+        <package android:name="ru.ftc.faktura.kbhmb"/>
+        <package android:name="ru.ftc.faktura.kremlevskiy"/>
+        <package android:name="ru.ftc.faktura.lanta"/>
+        <package android:name="ru.ftc.faktura.maritimebank"/>
+        <package android:name="ru.ftc.faktura.mfkbank"/>
+        <package android:name="ru.ftc.faktura.moscombank"/>
+        <package android:name="ru.ftc.faktura.multibank"/>
+        <package android:name="ru.ftc.faktura.nipbank"/>
+        <package android:name="ru.ftc.faktura.nokss"/>
+        <package android:name="ru.ftc.faktura.novobank"/>
+        <package android:name="ru.ftc.faktura.ns"/>
+        <package android:name="ru.ftc.faktura.nsbank"/>
+        <package android:name="ru.ftc.faktura.nskbl"/>
+        <package android:name="ru.ftc.faktura.orbank"/>
+        <package android:name="ru.ftc.faktura.primsoc"/>
+        <package android:name="ru.ftc.faktura.pskb"/>
+        <package android:name="ru.ftc.faktura.razvitiestolica"/>
+        <package android:name="ru.ftc.faktura.resokreditbank"/>
+        <package android:name="ru.ftc.faktura.rostfinance"/>
+        <package android:name="ru.ftc.faktura.sdm"/>
+        <package android:name="ru.ftc.faktura.siab"/>
+        <package android:name="ru.ftc.faktura.solidbank"/>
+        <package android:name="ru.ftc.faktura.tavrich"/>
+        <package android:name="ru.ftc.faktura.tkbbank"/>
+        <package android:name="ru.ftc.faktura.united"/>
+        <package android:name="ru.ftc.faktura.venetsbank"/>
+        <package android:name="ru.ftc.faktura.vesta"/>
+        <package android:name="ru.ftc.faktura.vlbb"/>
+        <package android:name="ru.ftc.faktura.zemskybank"/>
+        <package android:name="ru.gazprombank.android.mobilebank.app"/>
+        <package android:name="ru.gebank.ib"/>
+        <package android:name="ru.homecredit.mycredit"/>
+        <package android:name="ru.ibam.retailmobile"/>
+        <package android:name="ru.ilb.bbmobile"/>
+        <package android:name="ru.ipb.ubsmobile"/>
+        <package android:name="ru.isfront.android.kt"/>
+        <package android:name="ru.krk.ubsmobile"/>
+        <package android:name="ru.letobank.Prometheus"/>
+        <package android:name="ru.mcbankrus.MCBankRus"/>
+        <package android:name="ru.mkb.mobile"/>
+        <package android:name="ru.mts.money"/>
+        <package android:name="ru.mw"/>
+        <package android:name="ru.nbd.android"/>
+        <package android:name="ru.otpbank.mobile"/>
+        <package android:name="ru.raiffeisennews"/>
+        <package android:name="ru.rosbank.android"/>
+        <package android:name="ru.rosdorbank.physical"/>
+        <package android:name="ru.rshb.dbo"/>
+        <package android:name="ru.rubank.ubsmobile"/>
+        <package android:name="ru.rusnarbank.correqts.retail"/>
+        <package android:name="ru.rustore.payments.sandboxbank"/>
+        <package android:name="ru.sberbankmobile"/>
+        <package android:name="ru.sberbankmobile_alpha"/>
+        <package android:name="ru.sbi.android"/>
+        <package android:name="ru.simpls.brs2.mobbank"/>
+        <package android:name="ru.skbbank.ib"/>
+        <package android:name="ru.sngb.dbo.client.android"/>
+        <package android:name="ru.sovcomcard.halva.v1"/>
+        <package android:name="ru.unicredit.android"/>
+        <package android:name="ru.uralprombank.mobilebanknew.googleplay"/>
+        <package android:name="ru.vtb24.mobilebanking.android"/>
+        <package android:name="ru.vtkbank.android"/>
+        <package android:name="ru.yoo.money"/>
+        <package android:name="ru.zenit.android"/>
+        <intent>
+            <action android:name="com.android.vending.billing.InAppBillingService.BIND"/>
+        </intent>
+        <intent>
+            <action android:name="com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND"/>
+        </intent>
+        <intent>
+            <action android:name="ru.vk.store.provider.analytics.AnalyticsProvider"/>
+        </intent>
+        <package android:name="ru.vk.store"/>
+        <package android:name="ru.vk.store.qa"/>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.BROADCAST_STICKY"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT"
+        android:usesPermissionFlags="neverForLocation"/>
+    <uses-permission-sdk-23
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="27"/>
+    <uses-permission android:name="android.permission.SET_VOLUME_KEY_LONG_PRESS_LISTENER"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission-sdk-23 android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission
+        android:name="com.android.launcher.permission.INSTALL_SHORTCUT"
+        android:maxSdkVersion="25"/>
+    <uses-permission android:name="com.android.vending.BILLING"/>
+    <uses-permission android:name="com.sony.walkman.volumectrlpanel.PERM_MASTER_VOLUME"/>
+    <permission
+        android:name="com.maxmpz.audioplayer.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:protectionLevel="signature"/>
+    <uses-permission android:name="com.maxmpz.audioplayer.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23"/>
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/app_icon_rounded"
+        android:name="com.maxmpz.audioplayer.Application"
+        android:manageSpaceActivity="com.maxmpz.audioplayer.preference.SettingsActivityManageSpace"
+        android:allowBackup="false"
+        android:hardwareAccelerated="true"
+        android:largeHeap="@bool/app_large_heap"
+        android:extractNativeLibs="true"
+        android:usesCleartextTraffic="true"
+        android:appCategory="audio"
+        android:hasFragileUserData="true"
+        android:requestLegacyExternalStorage="true"
+        android:preserveLegacyExternalStorage="true"
+        android:enableOnBackInvokedCallback="true">
+        <profileable android:shell="true"/>
+        <property
+            android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+            android:value="true"/>
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc"/>
+        <meta-data
+            android:name="com.google.android.gms.car.application.theme"
+            android:resource="@style/AutoTheme"/>
+        <meta-data
+            android:name="androidx.car.app.TintableAttributionIcon"
+            android:resource="@drawable/auto_attribution_icon"/>
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="com.maxmpz.audioplayer.cast.CastOptionsProvider"/>
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version"/>
+        <receiver
+            android:name="com.google.android.gms.cast.framework.media.MediaIntentReceiver"
+            android:exported="false"/>
+        <service
+            android:label="Player Service"
+            android:name="com.maxmpz.audioplayer.player.PlayerService"
+            android:exported="true"
+            android:foregroundServiceType="connectedDevice|mediaPlayback">
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.API_COMMAND"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.API_COMMAND"/>
+                <data android:scheme="file"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.API_COMMAND"/>
+                <data
+                    android:mimeType="vnd.android.cursor.item/vnd.maxmpz.row"
+                    android:scheme="content"/>
+            </intent-filter>
+        </service>
+        <service
+            android:label="Headset Micro Service"
+            android:name="com.maxmpz.audioplayer.player.HeadsetMicroService"/>
+        <service
+            android:label="Poweramp Scan Service"
+            android:name="com.maxmpz.audioplayer.scanner.ScanDispatcherService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SCAN_DIRS"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SCAN_TAGS"/>
+            </intent-filter>
+        </service>
+        <service
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_rounded_enlarged"
+            android:name="com.maxmpz.audioplayer.data.external.BrowserService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService"/>
+            </intent-filter>
+        </service>
+        <service
+            android:label="@string/app_name"
+            android:icon="@drawable/play_24dp"
+            android:name="com.maxmpz.audioplayer.TileService"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="true"/>
+        </service>
+        <activity
+            android:theme="@style/ActivityWidgetConfigure"
+            android:label="@string/configure_widget"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x4Configure"
+            android:exported="true"
+            android:taskAffinity="com.maxmpz.audioplayer.widgetpackcommon"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/ActivityWidgetConfigure"
+            android:label="@string/configure_widget"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x1Configure"
+            android:exported="true"
+            android:taskAffinity="com.maxmpz.audioplayer.widgetpackcommon"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/ActivityWidgetConfigure"
+            android:label="@string/configure_widget"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x2Configure"
+            android:exported="true"
+            android:taskAffinity="com.maxmpz.audioplayer.widgetpackcommon"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@style/ActivityWidgetConfigure"
+            android:label="@string/configure_widget"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget2x2Configure"
+            android:exported="true"
+            android:taskAffinity="com.maxmpz.audioplayer.widgetpackcommon"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+        <receiver
+            android:label="@string/widget_4x1"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x1Provider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_4x1"/>
+        </receiver>
+        <receiver
+            android:label="@string/widget_4x2"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x2Provider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_4x2"/>
+        </receiver>
+        <receiver
+            android:label="@string/widget_2x2"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget2x2Provider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_2x2"/>
+        </receiver>
+        <receiver
+            android:label="@string/widget_4x4"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x4Provider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_4x4"/>
+        </receiver>
+        <activity
+            android:theme="@style/ActivityWidgetConfigure"
+            android:label="@string/configure_widget"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x4ConfigureCover"
+            android:exported="true"
+            android:taskAffinity="com.maxmpz.audioplayer.widgetpackcommon"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+        <receiver
+            android:label="@string/widget_4x4"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x4ProviderCover"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_4x4_cover"/>
+            <meta-data
+                android:name="com.samsung.android.appwidget.provider"
+                android:resource="@xml/widget_samsung"/>
+        </receiver>
+        <activity
+            android:theme="@style/ActivityWidgetConfigure"
+            android:label="@string/configure_widget"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x2ConfigureCover"
+            android:exported="true"
+            android:taskAffinity="com.maxmpz.audioplayer.widgetpackcommon"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+        <receiver
+            android:label="@string/widget_4x2"
+            android:name="com.maxmpz.audioplayer.widgetpackcommon.Widget4x2ProviderCover"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_4x2_cover"/>
+            <meta-data
+                android:name="com.samsung.android.appwidget.provider"
+                android:resource="@xml/widget_samsung"/>
+        </receiver>
+        <provider
+            android:name="com.maxmpz.audioplayer.rest.RestProvider"
+            android:exported="true"
+            android:multiprocess="false"
+            android:authorities="com.maxmpz.audioplayer.data"
+            android:grantUriPermissions="true"/>
+        <provider
+            android:name="com.maxmpz.audioplayer.data.aa.AAContentProvider"
+            android:exported="true"
+            android:multiprocess="false"
+            android:authorities="com.maxmpz.audioplayer.aa"/>
+        <provider
+            android:name="com.maxmpz.audioplayer.data.GenericFileProvider"
+            android:exported="false"
+            android:authorities="com.maxmpz.audioplayer.data.GenericFileProvider"
+            android:grantUriPermissions="true"/>
+        <provider
+            android:name="com.maxmpz.audioplayer.data.MilkPresetsFileProvider"
+            android:permission="com.maxmpz.audioplayer.permission.ACCESS_MILK_PRESETS"
+            android:exported="true"
+            android:authorities="com.maxmpz.audioplayer.milk_presets"/>
+        <receiver
+            android:label="StorageBroadcastReceiver"
+            android:name="com.maxmpz.audioplayer.scanner.StorageBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_MOUNTED"/>
+                <data android:scheme="file"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_STATE"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:label="BTReceiver"
+            android:name="com.maxmpz.audioplayer.player.bt.BTReceiver"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:label="ManifestHeadsetPlugReceiver"
+            android:name="com.maxmpz.audioplayer.player.ManifestHeadsetPlugReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.sec.android.contextaware.HEADSET_PLUG"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.BALANCE_OUT_PLUG"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:label="PowerampAPIReceiver"
+            android:name="com.maxmpz.audioplayer.player.PowerampAPIReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.API_COMMAND"/>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SCAN_DIRS"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SCAN_TAGS"/>
+                <action android:name="com.maxmpz.audioplayer.NATIVE_PLUGIN_COMMAND"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_ASK_FOR_DATA_PERMISSION"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_RELOAD_DATA"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_EXPORT_SETTINGS"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_IMPORT_SETTINGS"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_UPDATE_LYRICS"/>
+                <action android:name="com.maxmpz.milk.ACTION_SCAN"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_NOTIFICATION_DELETED"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:label="InternalAPIReceiver"
+            android:name="com.maxmpz.audioplayer.player.InternalAPIReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.SKIN_VERIFIED"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:label="PSMediaButtonReceiver"
+            android:name="com.maxmpz.audioplayer.player.PSMediaButtonReceiver"
+            android:exported="true">
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.MEDIA_BUTTON"/>
+            </intent-filter>
+        </receiver>
+        <activity
+            android:theme="@style/StartupActivity"
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_rounded"
+            android:name="com.maxmpz.audioplayer.StartupActivity"
+            android:exported="true"
+            android:configChanges="fontScale|colorMode|layoutDirection|smallestScreenSize|screenSize|uiMode|orientation|navigation|keyboardHidden|keyboard|locale"/>
+        <activity
+            android:theme="@style/StartingTheme"
+            android:label="@string/app_name"
+            android:name="com.maxmpz.audioplayer.MainActivity"
+            android:exported="true"
+            android:clearTaskOnLaunch="true"
+            android:launchMode="singleTask"
+            android:configChanges="uiMode|keyboardHidden|keyboard"
+            android:allowTaskReparenting="false"
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.MUSIC_PLAYER"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.APP_MUSIC"/>
+                <category android:name="android.intent.category.CATEGORY_APP_MUSIC"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.APP_MUSIC"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="file"/>
+                <data android:scheme="content"/>
+                <data android:mimeType="audio/*"/>
+                <data android:mimeType="application/ogg"/>
+                <data android:mimeType="application/x-ogg"/>
+                <data android:mimeType="application/wv"/>
+                <data android:mimeType="application/dff"/>
+                <data android:mimeType="application/dsf"/>
+                <data android:mimeType="application/x-wv"/>
+                <data android:mimeType="application/x-dff"/>
+                <data android:mimeType="application/x-dsf"/>
+                <data android:mimeType="audio/ogg"/>
+                <data android:mimeType="audio/flac"/>
+                <data android:mimeType="audio/x-flac"/>
+                <data android:mimeType="application/flac"/>
+                <data android:mimeType="application/x-flac"/>
+                <data android:mimeType="application/ape"/>
+                <data android:mimeType="application/x-ape"/>
+                <data android:mimeType="audio/x-matroska"/>
+                <data android:mimeType="audio/x-mpegurl"/>
+                <data android:mimeType="application/x-mpegurl"/>
+                <data android:mimeType="application/x-winamp-playlist"/>
+                <data android:mimeType="application/vnd.apple.mpegurl"/>
+                <data android:mimeType="chemical/x-mopac-input"/>
+                <data android:mimeType="audio/opus"/>
+                <data android:mimeType="application/x-opus"/>
+                <data android:mimeType="application/opus"/>
+                <data android:mimeType="audio/webm"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="file"/>
+                <data android:scheme="content"/>
+                <data android:mimeType="video/mp4"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="file"/>
+                <data android:scheme="content"/>
+                <data android:host="*"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.dff"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.dsf"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.tta"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.wv"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\..*\\.wv"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern=".*\\.tak"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern=".*\\.mpc"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.ape"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.opus"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.it"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.mod"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.s3m"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.xm"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.mptm"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.xm"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.webm"/>
+                <data android:pathSuffix=".xm"/>
+                <data android:pathSuffix=".s3m"/>
+                <data android:pathSuffix=".it"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="file"/>
+                <data android:scheme="content"/>
+                <data android:host="*"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.m3u"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.M3U"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.m3u8"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.M3U8"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.pls"/>
+                <data
+                    android:mimeType="*/*"
+                    android:pathPattern="/.*\\.PLS"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.ACTION_OPEN_MAIN"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SHOW_CURRENT"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_OPEN_EQ"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_OPEN_LIBRARY"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SHOW_LIST"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.ACTION_OPEN_LIBRARY"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SHOW_LIST"/>
+                <data
+                    android:mimeType="vnd.android.cursor.item/vnd.maxmpz.row"
+                    android:scheme="content"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH"/>
+                <action android:name="android.intent.action.MEDIA_SEARCH"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_OPEN_SEARCH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="content"/>
+                <data android:mimeType="text/plain"/>
+                <data android:scheme="file"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="content"/>
+                <data android:scheme="file"/>
+                <data android:mimeType="application/json"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable"/>
+        </activity>
+        <activity-alias
+            android:name="com.maxmpz.audioplayer.PlayListActivity"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity"/>
+        <activity-alias
+            android:name="com.maxmpz.audioplayer.EqActivity"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity"/>
+        <activity-alias
+            android:name="com.maxmpz.audioplayer.PlayerUIActivity"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity"/>
+        <activity-alias
+            android:name="com.maxmpz.audioplayer.ListActivity"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity"/>
+        <activity-alias
+            android:name="com.maxmpz.audioplayer.USBMainActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/usb_device_filter"/>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_rounded_play_inverted_mu"
+            android:name="com.maxmpz.audioplayer.rounded_play_inverted_mu"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/white_play"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/mu_colors"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_rounded_inverted_mu"
+            android:name="com.maxmpz.audioplayer.rounded_inverted_mu"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/skin_rounded_corners"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/mu_colors"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_rounded_play_mu"
+            android:name="com.maxmpz.audioplayer.rounded_play_mu"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/white_play"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/mu_colors"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_rounded_mu"
+            android:name="com.maxmpz.audioplayer.rounded_mu"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/skin_rounded_corners"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/mu_colors"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_mu"
+            android:name="com.maxmpz.audioplayer.standard_mu"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/_default"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/mu_colors"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_white_play"
+            android:name="com.maxmpz.audioplayer.white_play_adaptive"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/white_play"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/adaptive_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_black_play"
+            android:name="com.maxmpz.audioplayer.black_play_adaptive"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/black_play"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/adaptive_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@drawable/app_icon_classic"
+            android:name="com.maxmpz.audioplayer.classic"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/classic"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/round_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@drawable/app_icon_white_round"
+            android:name="com.maxmpz.audioplayer.white_round"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/pref_white"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/round_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@drawable/app_icon_black_round"
+            android:name="com.maxmpz.audioplayer.black_round"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/pref_black"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/round_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_zap_plain"
+            android:name="com.maxmpz.audioplayer.zap_plain_adaptive"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/just_zap"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/adaptive_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_zap"
+            android:name="com.maxmpz.audioplayer.zap_round"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity"
+            android:roundIcon="@mipmap/app_icon_zap">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/zap"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/round_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_zap"
+            android:name="com.maxmpz.audioplayer.zap_adaptive"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/zap"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/adaptive_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@drawable/app_icon_rounded"
+            android:name="com.maxmpz.audioplayer.round"
+            android:enabled="false"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/round"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/round_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/app_name"
+            android:icon="@mipmap/app_icon_rounded"
+            android:name="com.maxmpz.audioplayer.standard_adaptive"
+            android:enabled="true"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.MainActivity">
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts"/>
+            <meta-data
+                android:name="_icon_name"
+                android:resource="@string/_default"/>
+            <meta-data
+                android:name="_icon_summary"
+                android:resource="@string/adaptive_icon"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity
+            android:theme="@style/ActivityTheme_Settings"
+            android:label="@string/pref_poweramp_settings"
+            android:name="com.maxmpz.audioplayer.preference.SettingsActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.NOTIFICATION_PREFERENCES"/>
+            </intent-filter>
+        </activity>
+        <activity-alias
+            android:name="com.maxmpz.audioplayer.SettingsActivity"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.preference.SettingsActivity"/>
+        <activity
+            android:theme="@style/ActivityTheme_Settings"
+            android:label="@string/pref_manage_space"
+            android:name="com.maxmpz.audioplayer.preference.SettingsActivityManageSpace"
+            android:exported="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.WelcomeActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.InfoActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.EditTagActivity"
+            android:excludeFromRecents="true"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.ExpiredActivity"
+            android:launchMode="singleTop"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.HuaweiMigrationActivity"
+            android:exported="true"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:configChanges="smallestScreenSize|screenSize|uiMode|screenLayout|orientation|keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.ChangelogActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.EditNameActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.SelectAlbumArtActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.GenericDialogActivity"
+            android:exported="false"
+            android:configChanges="keyboardHidden"/>
+        <activity-alias
+            android:theme="@style/Dialog"
+            android:label="@string/playlist"
+            android:icon="@drawable/app_shortcut_playlist"
+            android:name="com.maxmpz.audioplayer.dialogs.PlaylistShortcutActivity"
+            android:exported="true"
+            android:configChanges="keyboardHidden"
+            android:targetActivity="com.maxmpz.audioplayer.dialogs.GenericDialogActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.CREATE_SHORTCUT"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:label="@string/pref_folders_selection"
+            android:name="com.maxmpz.audioplayer.dialogs.MusicFoldersActivity"
+            android:exported="true"
+            android:targetActivity="com.maxmpz.audioplayer.dialogs.GenericDialogActivity"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.AutoFindDialogActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/ActivityTheme_Settings"
+            android:label="@string/pref_open_source_licenses"
+            android:name="com.maxmpz.audioplayer.preference.SettingsLicenseActivity"
+            android:configChanges="screenSize|orientation|keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:label=""
+            android:name="com.maxmpz.audioplayer.dialogs.APMUnlockDialogActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:label="@string/pref_buffer_size"
+            android:name="com.maxmpz.audioplayer.dialogs.AudioBufferActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.EqPresetAssignActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.AddEqPresetActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.AddReverbPresetActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.ListOptsActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.PlaylistSortActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.LyricsActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.MediaRouteChooserActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="true"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.MediaRouteControllerActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="false"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.EqPresetsActivity"
+            android:configChanges="keyboardHidden"
+            android:noHistory="false"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.widget.app.AlertDialogActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.PlaylistSelectActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.AudioInfoActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@style/Dialog"
+            android:name="com.maxmpz.audioplayer.dialogs.PlaylistsExportActivity"
+            android:configChanges="keyboardHidden"/>
+        <activity
+            android:theme="@android:style/Theme.NoDisplay"
+            android:name="com.maxmpz.audioplayer.VoiceSearchHelperActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:taskAffinity=""
+            android:stateNotNeeded="true"
+            android:launchMode="singleTop"
+            android:configChanges="screenSize|orientation"
+            android:noHistory="true"
+            android:showOnLockScreen="true"
+            android:showForAllUsers="true">
+            <intent-filter android:priority="2147483647">
+                <action android:name="android.speech.action.WEB_SEARCH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter android:priority="2147483647">
+                <action android:name="android.speech.action.VOICE_SEARCH_HANDS_FREE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter android:priority="2147483647">
+                <action android:name="android.speech.action.VOICE_SEARCH_HANDS_FREE"/>
+            </intent-filter>
+            <intent-filter android:priority="2147483647">
+                <action android:name="com.sec.action.SVOICE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+            android:theme="@android:style/Theme.NoDisplay"
+            android:name="com.maxmpz.audioplayer.PowerampAPIActivity"
+            android:exported="true"
+            android:taskAffinity=""
+            android:stateNotNeeded="true"
+            android:launchMode="singleTop"
+            android:configChanges="screenSize|orientation"
+            android:noHistory="true"
+            android:showOnLockScreen="true"
+            android:showForAllUsers="true">
+            <intent-filter>
+                <action android:name="com.maxmpz.audioplayer.API_COMMAND"/>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SCAN_DIRS"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_SCAN_TAGS"/>
+                <action android:name="com.maxmpz.audioplayer.NATIVE_PLUGIN_COMMAND"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_ASK_FOR_DATA_PERMISSION"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_RELOAD_DATA"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_EXPORT_SETTINGS"/>
+                <action android:name="com.maxmpz.audioplayer.ACTION_IMPORT_SETTINGS"/>
+                <action android:name="com.maxmpz.audioplayer.START_SKIN_VERIFICATION"/>
+                <action android:name="com.maxmpz.milk.ACTION_SCAN"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <meta-data
+            android:name="com.sec.android.support.multiwindow"
+            android:value="true"/>
+        <meta-data
+            android:name="com.sec.android.multiwindow.DEFAULT_SIZE_W"
+            android:value="632dp"/>
+        <meta-data
+            android:name="com.sec.android.multiwindow.DEFAULT_SIZE_H"
+            android:value="598dp"/>
+        <meta-data
+            android:name="com.sec.android.multiwindow.MINIMUM_SIZE_W"
+            android:value="632dp"/>
+        <meta-data
+            android:name="com.sec.android.multiwindow.MINIMUM_SIZE_H"
+            android:value="598dp"/>
+        <meta-data
+            android:name="android.max_aspect"
+            android:value="2.9"/>
+        <uses-library
+            android:name="android.test.base"
+            android:required="false"/>
+        <provider
+            android:name="com.maxmpz.milk.data.MilkRestProvider"
+            android:exported="true"
+            android:multiprocess="false"
+            android:authorities="com.maxmpz.milk.data"/>
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"
+            android:enabled="false"
+            android:exported="true"
+            android:multiprocess="false"
+            android:authorities="com.maxmpz.audioplayer.shizuku"/>
+        <service
+            android:label="Milk Presets Scan Service"
+            android:name="com.maxmpz.milk.scanner.MilkScanService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.maxmpz.milk.ACTION_SCAN"/>
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.google.android.gms.cast.framework.ReconnectionService"
+            android:exported="false"/>
+        <activity
+            android:theme="@style/SdkPayTheme"
+            android:name="ru.rustore.sdk.pay.internal.presentation.ui.PayActivity"
+            android:launchMode="singleTask"
+            android:configChanges="screenSize|orientation|keyboardHidden|keyboard"
+            android:windowSoftInputMode="adjustResize"/>
+        <meta-data
+            android:name="com.google.android.play.billingclient.version"
+            android:value="8.0.0"/>
+        <activity
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:name="com.android.billingclient.api.ProxyBillingActivity"
+            android:exported="false"
+            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard"/>
+        <activity
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:name="com.android.billingclient.api.ProxyBillingActivityV2"
+            android:exported="false"
+            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard"/>
+        <activity
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+            android:exported="false"/>
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:exported="false"
+            android:authorities="com.maxmpz.audioplayer.androidx-startup">
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                android:value="androidx.startup"/>
+            <meta-data
+                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                android:value="androidx.startup"/>
+            <meta-data
+                android:name="okhttp3.internal.platform.PlatformInitializer"
+                android:value="androidx.startup"/>
+            <meta-data
+                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+                android:value="androidx.startup"/>
+        </provider>
+        <service
+            android:label="SendMetricsEventJobService"
+            android:name="ru.rustore.sdk.metrics.internal.presentation.SendMetricsEventJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"/>
+        <provider
+            android:name="ru.rustore.sdk.imaging.ImageLoaderContentProvider"
+            android:enabled="true"
+            android:exported="false"
+            android:authorities="com.maxmpz.audioplayer.sdk.imaging"/>
+        <meta-data
+            android:name="moe.shizuku.client.V3_SUPPORT"
+            android:value="true"/>
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            android:permission="android.permission.DUMP"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SKIP_FILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION"/>
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+            android:exported="false">
+            <meta-data
+                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+                android:value="cct"/>
+        </service>
+        <service
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"/>
+        <receiver
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+            android:exported="false"/>
+        <activity
+            android:theme="@android:style/Theme.NoDisplay"
+            android:name="com.maxmpz.audioplayer.RstrActivity"
+            android:exported="true"
+            android:taskAffinity="com.maxmpz.audioplayer"
+            android:stateNotNeeded="true"
+            android:launchMode="singleTop"
+            android:configChanges="screenSize|orientation"
+            android:noHistory="true"
+            android:showOnLockScreen="true"
+            android:showForAllUsers="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="rstrpoweramp"/>
+            </intent-filter>
+        </activity>
+        <meta-data
+            android:name="sdk_pay_scheme_value"
+            android:value="rstrpoweramp"/>
+        <meta-data
+            android:name="console_app_id_value"
+            android:value="4097983"/>
+    </application>
+</manifest>
