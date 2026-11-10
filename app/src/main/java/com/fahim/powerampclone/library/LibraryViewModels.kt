@@ -3,6 +3,7 @@ package com.fahim.powerampclone.library
 import androidx.lifecycle.ViewModel
 import com.fahim.powerampclone.data.MockMusicRepository
 import com.fahim.powerampclone.data.MusicRepository
+import com.fahim.powerampclone.data.local.MediaStoreMusicRepository
 import com.fahim.powerampclone.model.SortOrder
 import com.fahim.powerampclone.model.Track
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,9 +19,16 @@ class LibraryViewModel(
         val sortOrder: SortOrder = SortOrder.TITLE,
         val selectedIds: Set<Long> = emptySet(),
         val selectionMode: Boolean = false,
+        val isPermissionGranted: Boolean = true,
+        val isLocalLoaded: Boolean = false,
     )
 
-    private val _state = MutableStateFlow(UiState())
+    private val _state = MutableStateFlow(
+        UiState(
+            isPermissionGranted = (repository as? MediaStoreMusicRepository)?.isPermissionGranted?.value ?: true,
+            isLocalLoaded = (repository as? MediaStoreMusicRepository)?.isLocalLoaded?.value ?: false,
+        ),
+    )
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     val allTracks: List<Track> get() = repository.tracks()
@@ -49,6 +57,17 @@ class LibraryViewModel(
     }
 
     fun clearSelection() = _state.update { it.copy(selectedIds = emptySet(), selectionMode = false) }
+
+    fun refresh() {
+        (repository as? MediaStoreMusicRepository)?.reload()
+        _state.update {
+            it.copy(
+                isPermissionGranted = (repository as? MediaStoreMusicRepository)?.isPermissionGranted?.value ?: true,
+                isLocalLoaded = (repository as? MediaStoreMusicRepository)?.isLocalLoaded?.value ?: false,
+            )
+        }
+    }
+
     fun trackById(id: Long) = repository.trackById(id)
     fun albumById(id: Long) = repository.albumById(id)
     fun artistById(id: Long) = repository.artistById(id)
@@ -61,27 +80,31 @@ class SearchViewModel(
 ) : ViewModel() {
     data class UiState(
         val query: String = "",
-        val history: List<String> = listOf("Sky Dreams", "Aurora Lane", "Midnight"),
         val results: MusicRepository.SearchResults? = null,
-        val isSearching: Boolean = false,
+        val history: List<String> = emptyList(),
     )
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
-    fun onQueryChange(query: String) {
-        _state.update { it.copy(query = query, isSearching = query.isNotBlank(), results = if (query.isBlank()) null else repository.search(query)) }
+    fun onQueryChange(newQuery: String) {
+        _state.update {
+            it.copy(
+                query = newQuery,
+                results = if (newQuery.isBlank()) null else repository.search(newQuery),
+            )
+        }
     }
 
     fun submitSearch() {
         val q = _state.value.query.trim()
-        if (q.isEmpty()) return
-        _state.update {
-            it.copy(history = (listOf(q) + it.history).distinct().take(8), isSearching = false)
+        if (q.isNotEmpty()) {
+            _state.update {
+                val updated = listOf(q) + (it.history - q)
+                it.copy(history = updated.take(10))
+            }
         }
     }
 
-    fun clearSearch() = _state.update { it.copy(query = "", results = null, isSearching = false) }
     fun clearHistory() = _state.update { it.copy(history = emptyList()) }
-    fun useHistoryTerm(term: String) = onQueryChange(term)
 }

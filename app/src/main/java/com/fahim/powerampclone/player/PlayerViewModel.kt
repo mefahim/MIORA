@@ -6,6 +6,7 @@ import com.fahim.powerampclone.data.MockMusicRepository
 import com.fahim.powerampclone.data.MusicRepository
 import com.fahim.powerampclone.model.RepeatMode
 import com.fahim.powerampclone.model.Track
+import com.fahim.powerampclone.playback.PlaybackManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,9 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Simulated playback state. No audio is produced in Phase 2 — the ticker only
- * advances [PlayerUiState.positionMs] so every control behaves like a real player.
- * A future audio engine replaces [tick] with MediaSession callbacks; the UI contract stays identical.
+ * Playback UI state matching Poweramp / MIORA player contracts.
  */
 data class PlayerUiState(
     val queue: List<Track> = emptyList(),
@@ -35,23 +34,30 @@ data class PlayerUiState(
 
 class PlayerViewModel(
     private val repository: MusicRepository = MockMusicRepository(),
+    private val playbackManager: PlaybackManager? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow(PlayerUiState())
-    val state: StateFlow<PlayerUiState> = _state.asStateFlow()
+    val state: StateFlow<PlayerUiState> = playbackManager?.state ?: _state.asStateFlow()
     private var ticker: Job? = null
 
     init {
-        val tracks = repository.tracks()
-        _state.update {
-            it.copy(
-                queue = tracks,
-                queueOrder = tracks.map { t -> t.id },
-                favorites = tracks.filter { t -> t.isFavorite }.map { t -> t.id }.toSet(),
-            )
+        if (playbackManager == null) {
+            val tracks = repository.tracks()
+            _state.update {
+                it.copy(
+                    queue = tracks,
+                    queueOrder = tracks.map { t -> t.id },
+                    favorites = tracks.filter { t -> t.isFavorite }.map { t -> t.id }.toSet(),
+                )
+            }
         }
     }
 
     fun playTrack(track: Track, queue: List<Track>? = null) {
+        if (playbackManager != null) {
+            playbackManager.playTrack(track, queue)
+            return
+        }
         val newQueue = queue ?: _state.value.queue
         val index = newQueue.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } ?: 0
         _state.update { it.copy(queue = newQueue, queueOrder = newQueue.map { t -> t.id }, currentIndex = index, positionMs = 0L, isPlaying = true) }
@@ -59,12 +65,20 @@ class PlayerViewModel(
     }
 
     fun togglePlayPause() {
+        if (playbackManager != null) {
+            playbackManager.togglePlayPause()
+            return
+        }
         val playing = !_state.value.isPlaying
         _state.update { it.copy(isPlaying = playing) }
         if (playing) startTicker() else ticker?.cancel()
     }
 
     fun next() {
+        if (playbackManager != null) {
+            playbackManager.next()
+            return
+        }
         val s = _state.value
         if (s.queue.isEmpty()) return
         val nextIndex = if (s.shuffle) s.queue.indices.filter { it != s.currentIndex }.random() else (s.currentIndex + 1) % s.queue.size
@@ -73,6 +87,10 @@ class PlayerViewModel(
     }
 
     fun previous() {
+        if (playbackManager != null) {
+            playbackManager.previous()
+            return
+        }
         val s = _state.value
         if (s.queue.isEmpty()) return
         if (s.positionMs > 3000L) { seekTo(0L); return }
@@ -82,19 +100,37 @@ class PlayerViewModel(
     }
 
     fun seekTo(positionMs: Long) {
+        if (playbackManager != null) {
+            playbackManager.seekTo(positionMs)
+            return
+        }
         val track = _state.value.currentTrack ?: return
         _state.update { it.copy(positionMs = positionMs.coerceIn(0L, track.durationMs)) }
     }
 
-    fun toggleShuffle() = _state.update { it.copy(shuffle = !it.shuffle) }
+    fun toggleShuffle() {
+        if (playbackManager != null) {
+            playbackManager.toggleShuffle()
+            return
+        }
+        _state.update { it.copy(shuffle = !it.shuffle) }
+    }
 
     fun cycleRepeat() {
+        if (playbackManager != null) {
+            playbackManager.cycleRepeat()
+            return
+        }
         _state.update {
             it.copy(repeat = when (it.repeat) { RepeatMode.OFF -> RepeatMode.ALL; RepeatMode.ALL -> RepeatMode.ONE; RepeatMode.ONE -> RepeatMode.OFF })
         }
     }
 
     fun toggleFavorite(trackId: Long) {
+        if (playbackManager != null) {
+            playbackManager.toggleFavorite(trackId)
+            return
+        }
         _state.update {
             val favs = if (trackId in it.favorites) it.favorites - trackId else it.favorites + trackId
             it.copy(favorites = favs)
@@ -103,12 +139,15 @@ class PlayerViewModel(
 
     /** Move a queue item from [fromIndex] to [toIndex] (both indices into the full queue). */
     fun moveQueueItem(fromIndex: Int, toIndex: Int) {
+        if (playbackManager != null) {
+            playbackManager.moveQueueItem(fromIndex, toIndex)
+            return
+        }
         val s = _state.value
         if (fromIndex !in s.queue.indices || toIndex !in s.queue.indices || fromIndex == toIndex) return
         val mutable = s.queue.toMutableList()
         val item = mutable.removeAt(fromIndex)
         mutable.add(toIndex, item)
-        // Keep the current track playing: adjust currentIndex to follow the moved item.
         var newIndex = s.currentIndex
         if (fromIndex == s.currentIndex) newIndex = toIndex
         else if (fromIndex < s.currentIndex && toIndex >= s.currentIndex) newIndex -= 1
@@ -117,6 +156,10 @@ class PlayerViewModel(
     }
 
     fun removeQueueItem(index: Int) {
+        if (playbackManager != null) {
+            playbackManager.removeQueueItem(index)
+            return
+        }
         val s = _state.value
         if (index !in s.queue.indices || s.queue.size <= 1) return
         val mutable = s.queue.toMutableList()
@@ -128,6 +171,10 @@ class PlayerViewModel(
     }
 
     fun clearQueue() {
+        if (playbackManager != null) {
+            playbackManager.clearQueue()
+            return
+        }
         val s = _state.value
         val current = s.currentTrack
         val kept = if (current != null) listOf(current) else emptyList()
@@ -135,11 +182,32 @@ class PlayerViewModel(
     }
 
     fun shuffleQueue() {
+        if (playbackManager != null) {
+            playbackManager.shuffleQueue()
+            return
+        }
         val s = _state.value
         val current = s.currentTrack ?: return
         val rest = (s.queue - current).shuffled()
         val shuffled = listOf(current) + rest
         _state.update { it.copy(queue = shuffled, queueOrder = shuffled.map { t -> t.id }, currentIndex = 0) }
+    }
+
+    fun setQueue(tracks: List<Track>) {
+        if (playbackManager != null) {
+            playbackManager.setQueue(tracks)
+            return
+        }
+        if (tracks.isEmpty()) return
+        _state.update { current ->
+            val currentId = current.currentTrack?.id
+            val newIndex = if (currentId != null) tracks.indexOfFirst { it.id == currentId }.takeIf { it >= 0 } ?: 0 else 0
+            current.copy(
+                queue = tracks,
+                queueOrder = tracks.map { it.id },
+                currentIndex = newIndex,
+            )
+        }
     }
 
     private fun startTicker() {

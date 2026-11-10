@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -37,12 +39,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.fahim.powerampclone.data.MusicRepository
 import com.fahim.powerampclone.data.SettingsStore
+import com.fahim.powerampclone.data.local.MediaStoreMusicRepository
+import com.fahim.powerampclone.data.local.PermissionHelper
 import com.fahim.powerampclone.design.MioraTheme
 import com.fahim.powerampclone.library.LibraryViewModel
 import com.fahim.powerampclone.library.SearchViewModel
 import com.fahim.powerampclone.library.SettingsViewModel
 import com.fahim.powerampclone.navigation.Routes
+import com.fahim.powerampclone.playback.PlaybackManager
 import com.fahim.powerampclone.player.PlayerViewModel
 import com.fahim.powerampclone.ui.AlbumsScreen
 import com.fahim.powerampclone.ui.ArtistsScreen
@@ -75,6 +81,21 @@ private class SettingsViewModelFactory(private val store: SettingsStore) : ViewM
     override fun <T : ViewModel> create(modelClass: Class<T>): T = SettingsViewModel(store) as T
 }
 
+private class MusicViewModelFactory(
+    private val repository: MusicRepository,
+    private val playbackManager: PlaybackManager,
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return when {
+            modelClass.isAssignableFrom(LibraryViewModel::class.java) -> LibraryViewModel(repository) as T
+            modelClass.isAssignableFrom(PlayerViewModel::class.java) -> PlayerViewModel(repository, playbackManager) as T
+            modelClass.isAssignableFrom(SearchViewModel::class.java) -> SearchViewModel(repository) as T
+            else -> throw IllegalArgumentException("Unknown ViewModel class: $modelClass")
+        }
+    }
+}
+
 private data class BottomNavItem(
     val route: String,
     val label: String,
@@ -91,10 +112,29 @@ private val bottomNavItems = listOf(
 @Composable
 fun MioraApp() {
     val navController = rememberNavController()
-    val playerViewModel: PlayerViewModel = viewModel()
-    val libraryViewModel: LibraryViewModel = viewModel()
-    val searchViewModel: SearchViewModel = viewModel()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val repository = remember { MediaStoreMusicRepository(context.applicationContext) }
+    val playbackManager = remember { PlaybackManager.getInstance(context.applicationContext, repository) }
+    val musicFactory = remember(repository, playbackManager) { MusicViewModelFactory(repository, playbackManager) }
+
+    val playerViewModel: PlayerViewModel = viewModel(factory = musicFactory)
+    val libraryViewModel: LibraryViewModel = viewModel(factory = musicFactory)
+    val searchViewModel: SearchViewModel = viewModel(factory = musicFactory)
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { _ ->
+        libraryViewModel.refresh()
+        val scanned = libraryViewModel.allTracks
+        if (scanned.isNotEmpty()) {
+            playerViewModel.setQueue(scanned)
+        }
+    }
+
+    val onRequestPermission = {
+        permissionLauncher.launch(PermissionHelper.requiredMediaPermission())
+    }
+
     val settingsStore = remember { SettingsStore(context.applicationContext) }
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModelFactory(settingsStore))
     val settingsState by settingsViewModel.state.collectAsState()
@@ -145,6 +185,7 @@ fun MioraApp() {
                 libraryViewModel = libraryViewModel,
                 searchViewModel = searchViewModel,
                 settingsViewModel = settingsViewModel,
+                onRequestPermission = onRequestPermission,
                 modifier = Modifier.fillMaxSize().padding(padding),
             )
         }
@@ -164,6 +205,7 @@ private fun AppNavHost(
     libraryViewModel: LibraryViewModel,
     searchViewModel: SearchViewModel,
     settingsViewModel: SettingsViewModel,
+    onRequestPermission: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val navigate: (String) -> Unit = { navController.navigate(it) }
@@ -186,6 +228,7 @@ private fun AppNavHost(
                 onOpenPlayer = { navigate(Routes.PLAYER) },
                 onSearch = { navigate(Routes.SEARCH) },
                 onOpenSettings = { navigate(Routes.SETTINGS) },
+                onRequestPermission = onRequestPermission,
             )
         }
         composable(Routes.LIBRARY) {
@@ -193,6 +236,7 @@ private fun AppNavHost(
                 libraryViewModel = libraryViewModel,
                 onNavigate = navigate,
                 onOpenSettings = { navigate(Routes.SETTINGS) },
+                onRequestPermission = onRequestPermission,
             )
         }
         composable(Routes.SONGS) {

@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Check
@@ -32,12 +34,12 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -109,12 +111,14 @@ fun LibraryScreen(
     libraryViewModel: LibraryViewModel,
     onNavigate: (String) -> Unit,
     onOpenSettings: () -> Unit = { onNavigate(Routes.SETTINGS) },
+    onRequestPermission: () -> Unit = {},
 ) {
+    val libraryState by libraryViewModel.state.collectAsState()
     val cats = listOf(
         Triple("Songs", Icons.Filled.MusicNote, Routes.SONGS) to "${libraryViewModel.allTracks.size} tracks",
         Triple("Albums", Icons.Filled.Album, Routes.ALBUMS) to "${libraryViewModel.albums.size} albums",
         Triple("Artists", Icons.Filled.Person, Routes.ARTISTS) to "${libraryViewModel.artists.size} artists",
-        Triple("Playlists", Icons.Filled.QueueMusic, Routes.PLAYLISTS) to "${libraryViewModel.playlists.size} playlists",
+        Triple("Playlists", Icons.AutoMirrored.Filled.QueueMusic, Routes.PLAYLISTS) to "${libraryViewModel.playlists.size} playlists",
         Triple("Folders", Icons.Filled.Folder, Routes.FOLDERS) to "${libraryViewModel.folders.size} folders",
         Triple("Genres", Icons.Filled.Audiotrack, Routes.GENRES) to "${libraryViewModel.genres.size} genres",
     )
@@ -165,6 +169,52 @@ fun LibraryScreen(
                 Spacer(Modifier.height(Spacing.md))
             }
 
+            // Local Music Permission Card
+            if (!libraryState.isPermissionGranted) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Audiotrack,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = "Scan Local Music",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Allow MIORA to access audio files on this device to discover and play your local music.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            FilledTonalButton(
+                                onClick = onRequestPermission,
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Text("Grant Permission")
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(Spacing.sm))
+                }
+            }
+
             items(cats) { (cat, count) ->
                 Row(
                     modifier = Modifier
@@ -211,7 +261,7 @@ fun SongsScreen(
         onBack = { if (state.selectionMode) libraryViewModel.clearSelection() else onBack() },
         sortMenu = {
             IconButton(onClick = { sortExpanded = true }) {
-                Icon(Icons.Filled.Sort, contentDescription = "Sort songs")
+                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort songs")
             }
             IconButton(onClick = {
                 if (state.selectionMode) libraryViewModel.clearSelection()

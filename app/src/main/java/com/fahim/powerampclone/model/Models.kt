@@ -1,29 +1,35 @@
 package com.fahim.powerampclone.model
 
 import androidx.compose.ui.graphics.Color
+import com.fahim.powerampclone.design.hslToColor
+import kotlin.math.abs
 
-/** Domain models — pure Kotlin, no Android dependencies, ready for a real engine later. */
+/** Domain models — pure Kotlin, serializable, with real audio uri support. */
 data class Track(
     val id: Long,
     val title: String,
     val artist: String,
     val album: String,
-    val albumId: Long,
-    val artistId: Long,
-    val durationMs: Long,
-    val trackNumber: Int,
-    val year: Int,
-    val genre: String,
-    val folderPath: String,
+    val albumId: Long = 0L,
+    val artistId: Long = 0L,
+    val durationMs: Long = 180000L,
+    val trackNumber: Int = 1,
+    val year: Int = 2024,
+    val genre: String = "Music",
+    val folderPath: String = "/Music",
     val isFavorite: Boolean = false,
     /** Deterministic seed colour for the original placeholder artwork. */
-    val artworkSeed: Color,
-    /** Simulated format metadata — labelled as sample data in the Audio Info dialog. */
+    val artworkSeed: Color = seedColorForString(album),
+    /** Real or simulated format metadata. */
     val format: String = "FLAC",
     val bitrateKbps: Int = 912,
     val sampleRateHz: Int = 44100,
     val bitDepth: Int = 16,
     val lyrics: List<LyricLine> = emptyList(),
+    /** Real content URI string for Android media playback (e.g. content://media/external/audio/media/123) */
+    val contentUriString: String = "",
+    /** Album art URI string if present in MediaStore or local cache */
+    val artworkUriString: String? = null,
 )
 
 data class LyricLine(val startMs: Long, val text: String)
@@ -36,6 +42,7 @@ data class Album(
     val year: Int,
     val artworkSeed: Color,
     val trackIds: List<Long>,
+    val artworkUriString: String? = null,
 )
 
 data class Artist(
@@ -65,4 +72,11 @@ fun formatDuration(ms: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
+}
+
+/** Generates a deterministic, vibrant HSL seed color for any text key (e.g. title or album) */
+fun seedColorForString(key: String): Color {
+    val hash = key.hashCode()
+    val hue = (abs(hash) % 360).toFloat()
+    return hslToColor(hue, 68f, 42f)
 }

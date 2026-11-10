@@ -20,19 +20,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -79,7 +80,9 @@ fun HomeScreen(
     onOpenPlayer: () -> Unit,
     onSearch: () -> Unit,
     onOpenSettings: () -> Unit = { onNavigate(Routes.SETTINGS) },
+    onRequestPermission: () -> Unit = {},
 ) {
+    val libraryState by libraryViewModel.state.collectAsState()
     val playerState by playerViewModel.state.collectAsState()
     val featuredAlbum = libraryViewModel.albums.firstOrNull()
     val recentTracks = libraryViewModel.recentlyPlayed
@@ -137,6 +140,52 @@ fun HomeScreen(
                     )
                 }
                 Spacer(Modifier.height(Spacing.md))
+            }
+
+            // Local Music Permission Card
+            if (!libraryState.isPermissionGranted) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.Audiotrack,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    text = "Scan Local Music",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Allow MIORA to access audio files on this device to discover and play your local music.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            FilledTonalButton(
+                                onClick = onRequestPermission,
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
+                                Text("Grant Permission")
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(Spacing.sm))
+                }
             }
 
             // Featured Album Hero Card
@@ -286,7 +335,7 @@ fun HomeScreen(
                     Triple("Songs", Icons.Filled.MusicNote, Routes.SONGS),
                     Triple("Albums", Icons.Filled.Album, Routes.ALBUMS),
                     Triple("Artists", Icons.Filled.Person, Routes.ARTISTS),
-                    Triple("Playlists", Icons.Filled.QueueMusic, Routes.PLAYLISTS),
+                    Triple("Playlists", Icons.AutoMirrored.Filled.QueueMusic, Routes.PLAYLISTS),
                     Triple("Folders", Icons.Filled.Folder, Routes.FOLDERS),
                     Triple("Genres", Icons.Filled.Audiotrack, Routes.GENRES),
                 )
