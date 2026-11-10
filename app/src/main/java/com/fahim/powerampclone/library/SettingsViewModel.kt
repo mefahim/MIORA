@@ -24,8 +24,15 @@ class SettingsViewModel(private val store: SettingsStore) : ViewModel() {
     val state: StateFlow<SettingsUiState> = combine(
         store.themeMode, store.dynamicColor, store.accent,
         store.autoAddPlaylists, store.crossfade, store.playbackMode,
-    ) { theme, dynamic, accent, autoAdd, crossfade, mode ->
-        SettingsUiState(theme, dynamic, accent, autoAdd, crossfade, mode)
+    ) { args: Array<Any?> ->
+        SettingsUiState(
+            themeMode = args[0] as ThemeMode,
+            dynamicColor = args[1] as Boolean,
+            accent = args[2] as AccentChoice,
+            autoAddPlaylists = args[3] as Boolean,
+            crossfade = args[4] as String,
+            playbackMode = args[5] as String,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
     fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { store.setThemeMode(mode) }

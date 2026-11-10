@@ -1,10 +1,13 @@
 package com.fahim.powerampclone.navigation
 
-/** Navigation routes. The 66 declared activities from research/05 are classified here:
- *  8 user-facing screens become destinations; 22 dialogs become sheets/dialogs;
- *  widget config, licensing and third-party endpoints are out of Phase 2 scope. */
+/**
+ * Navigation routes for MIORA.
+ * Covers primary destinations (Home, Library, Search, Queue, Settings, Player)
+ * and category/detail/sheet screens.
+ */
 object Routes {
     const val HOME = "home"
+    const val LIBRARY = "library"
     const val SONGS = "songs"
     const val ALBUMS = "albums"
     const val ARTISTS = "artists"
@@ -21,6 +24,7 @@ object Routes {
     const val ALBUM_DETAIL = "album/{albumId}"
     const val ARTIST_DETAIL = "artist/{artistId}"
     const val PLAYLIST_DETAIL = "playlist/{playlistId}"
+
     fun album(id: Long) = "album/$id"
     fun artist(id: Long) = "artist/$id"
     fun playlist(id: Long) = "playlist/$id"

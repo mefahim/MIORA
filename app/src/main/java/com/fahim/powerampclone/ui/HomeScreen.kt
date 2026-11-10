@@ -1,7 +1,9 @@
 package com.fahim.powerampclone.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,31 +17,45 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.fahim.powerampclone.design.Spacing
 import com.fahim.powerampclone.library.LibraryViewModel
 import com.fahim.powerampclone.model.formatDuration
@@ -48,10 +64,10 @@ import com.fahim.powerampclone.player.PlayerViewModel
 import java.util.Calendar
 
 private fun greeting(): String = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-    in 5..11 -> "Good morning!"
-    in 12..16 -> "Good afternoon!"
-    in 17..21 -> "Good evening!"
-    else -> "Good night!"
+    in 5..11 -> "Good morning"
+    in 12..16 -> "Good afternoon"
+    in 17..21 -> "Good evening"
+    else -> "Good night"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,81 +78,301 @@ fun HomeScreen(
     onNavigate: (String) -> Unit,
     onOpenPlayer: () -> Unit,
     onSearch: () -> Unit,
+    onOpenSettings: () -> Unit = { onNavigate(Routes.SETTINGS) },
 ) {
+    val playerState by playerViewModel.state.collectAsState()
+    val featuredAlbum = libraryViewModel.albums.firstOrNull()
+    val recentTracks = libraryViewModel.recentlyPlayed
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Poweramp Clone", style = MaterialTheme.typography.titleLarge) },
-                actions = {
-                    IconButton(onClick = onSearch) { Icon(Icons.Filled.Search, contentDescription = "Search") }
+                title = {
+                    Text(
+                        text = "MIORA",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                        ),
+                    )
                 },
+                actions = {
+                    IconButton(onClick = onSearch) {
+                        Icon(Icons.Filled.Search, contentDescription = "Search")
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                ),
             )
         },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(bottom = Spacing.xxl)) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(bottom = Spacing.xxl),
+        ) {
+            // Editorial Greeting
             item {
-                Text(text = greeting(), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs))
-                Text(text = "Your music, your way ♫", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = Spacing.lg))
-                Spacer(Modifier.height(Spacing.lg))
+                Column(modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)) {
+                    Text(
+                        text = "${greeting()},\nmusic lover.",
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontSize = 28.sp,
+                            lineHeight = 34.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Spacer(Modifier.height(Spacing.xs))
+                    Text(
+                        text = "Your library, beautifully in tune.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.height(Spacing.md))
             }
+
+            // Featured Album Hero Card
+            if (featuredAlbum != null) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg)
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable {
+                                val tracks = libraryViewModel.tracksByIds(featuredAlbum.trackIds)
+                                if (tracks.isNotEmpty()) {
+                                    playerViewModel.playTrack(tracks.first(), tracks)
+                                    onOpenPlayer()
+                                }
+                            },
+                    ) {
+                        // Background Vector Art
+                        AlbumArt(
+                            seed = featuredAlbum.artworkSeed,
+                            title = featuredAlbum.title,
+                            size = 180.dp,
+                            cornerRadius = 20.dp,
+                            albumId = featuredAlbum.id,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+
+                        // Dark Gradient Scrim Overlay
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.Black.copy(alpha = 0.2f),
+                                            Color.Black.copy(alpha = 0.65f),
+                                            Color.Black.copy(alpha = 0.92f),
+                                        ),
+                                    ),
+                                ),
+                        )
+
+                        // Hero Content
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(Spacing.lg),
+                            verticalAlignment = Alignment.Bottom,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "FEATURED ALBUM",
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.2.sp,
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Spacer(Modifier.height(Spacing.xs))
+                                Text(
+                                    text = featuredAlbum.title,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = "${featuredAlbum.artist} • ${featuredAlbum.year} • ${featuredAlbum.trackIds.size} tracks",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            FilledIconButton(
+                                onClick = {
+                                    val tracks = libraryViewModel.tracksByIds(featuredAlbum.trackIds)
+                                    if (tracks.isNotEmpty()) {
+                                        playerViewModel.playTrack(tracks.first(), tracks)
+                                        onOpenPlayer()
+                                    }
+                                },
+                                modifier = Modifier.size(48.dp),
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                            ) {
+                                Icon(Icons.Filled.PlayArrow, contentDescription = "Play Album", modifier = Modifier.size(28.dp))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(Spacing.xl))
+                }
+            }
+
+            // Recently Played Shelf
             item {
-                SectionHeader("Recently Played", "See all") { onNavigate(Routes.SONGS) }
-                LazyRow(contentPadding = PaddingValues(horizontal = Spacing.lg), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    items(libraryViewModel.playlists) { playlist ->
-                        Column(modifier = Modifier.width(120.dp).clip(RoundedCornerShape(16.dp)).clickable { onNavigate(Routes.playlist(playlist.id)) }) {
-                            AlbumArt(seed = playlist.artworkSeed, title = playlist.name, size = 120.dp, cornerRadius = 16.dp)
+                SectionHeader("Recently played", "See all") { onNavigate(Routes.SONGS) }
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                ) {
+                    items(recentTracks) { track ->
+                        Column(
+                            modifier = Modifier
+                                .width(132.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable {
+                                    playerViewModel.playTrack(track)
+                                    onOpenPlayer()
+                                },
+                        ) {
+                            AlbumArt(
+                                seed = track.artworkSeed,
+                                title = track.title,
+                                size = 132.dp,
+                                cornerRadius = 16.dp,
+                                albumId = track.albumId,
+                            )
                             Spacer(Modifier.height(Spacing.sm))
-                            Text(text = playlist.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(text = "${playlist.trackIds.size} tracks", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = track.title,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = track.artist,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
                 }
-                Spacer(Modifier.height(Spacing.lg))
+                Spacer(Modifier.height(Spacing.xl))
             }
+
+            // Quick Category Strip
             item {
-                SectionHeader("Browse by Category")
-                val categories: List<Triple<String, ImageVector, String>> = listOf(
+                SectionHeader("Browse your library")
+                val categories = listOf(
                     Triple("Songs", Icons.Filled.MusicNote, Routes.SONGS),
                     Triple("Albums", Icons.Filled.Album, Routes.ALBUMS),
                     Triple("Artists", Icons.Filled.Person, Routes.ARTISTS),
                     Triple("Playlists", Icons.Filled.QueueMusic, Routes.PLAYLISTS),
                     Triple("Folders", Icons.Filled.Folder, Routes.FOLDERS),
-                    Triple("Genres", Icons.Filled.Category, Routes.GENRES),
+                    Triple("Genres", Icons.Filled.Audiotrack, Routes.GENRES),
                 )
-                Column(Modifier.padding(horizontal = Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    categories.chunked(3).forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                            row.forEach { (label, icon, route) ->
-                                Card(
-                                    onClick = { onNavigate(route) },
-                                    modifier = Modifier.weight(1f),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                                ) {
-                                    Column(Modifier.padding(Spacing.lg), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                                        Spacer(Modifier.height(Spacing.sm))
-                                        Text(label, style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                }
-                            }
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    items(categories) { (label, icon, route) ->
+                        FilterChip(
+                            selected = false,
+                            onClick = { onNavigate(route) },
+                            label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                            leadingIcon = {
+                                Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                            },
+                            shape = RoundedCornerShape(999.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                labelColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            border = null,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(Spacing.xl))
+            }
+
+            // Curated Playlists Shelf
+            item {
+                SectionHeader("Curated playlists", "See all") { onNavigate(Routes.PLAYLISTS) }
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = Spacing.lg),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                ) {
+                    items(libraryViewModel.playlists) { playlist ->
+                        Column(
+                            modifier = Modifier
+                                .width(132.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable { onNavigate(Routes.playlist(playlist.id)) },
+                        ) {
+                            AlbumArt(
+                                seed = playlist.artworkSeed,
+                                title = playlist.name,
+                                size = 132.dp,
+                                cornerRadius = 16.dp,
+                            )
+                            Spacer(Modifier.height(Spacing.sm))
+                            Text(
+                                text = playlist.name,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = "${playlist.trackIds.size} tracks${if (playlist.isSmart) " • Smart" else ""}",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }
-                Spacer(Modifier.height(Spacing.lg))
+                Spacer(Modifier.height(Spacing.xl))
             }
-            item { SectionHeader("All Songs", "See all") { onNavigate(Routes.SONGS) } }
-            items(libraryViewModel.sortedTracks().take(8)) { track ->
-                val state = playerViewModel.state
+
+            // Continue Listening Track List
+            item {
+                SectionHeader("Continue listening", "See all") { onNavigate(Routes.SONGS) }
+            }
+            items(libraryViewModel.sortedTracks().take(6)) { track ->
                 TrackRow(
                     title = track.title,
-                    subtitle = "${track.artist} • ${formatDuration(track.durationMs)}",
+                    subtitle = "${track.artist} • ${track.album}",
                     durationMs = track.durationMs,
                     seed = track.artworkSeed,
-                    isPlaying = state.value.currentTrack?.id == track.id && state.value.isPlaying,
-                    isFavorite = track.id in state.value.favorites,
+                    albumId = track.albumId,
+                    isPlaying = playerState.currentTrack?.id == track.id && playerState.isPlaying,
+                    isFavorite = track.id in playerState.favorites,
                     isSelected = false,
-                    onClick = { playerViewModel.playTrack(track); onOpenPlayer() },
-                    onMoreClick = { playerViewModel.playTrack(track) },
+                    onClick = {
+                        playerViewModel.playTrack(track)
+                        onOpenPlayer()
+                    },
+                    onMoreClick = {
+                        playerViewModel.playTrack(track)
+                    },
                     modifier = Modifier.padding(horizontal = Spacing.sm),
                 )
             }
