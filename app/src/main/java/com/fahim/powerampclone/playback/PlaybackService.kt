@@ -25,6 +25,7 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
+        isServiceRunning = true
         createNotificationChannel()
         initMediaSession()
     }
@@ -50,6 +51,8 @@ class PlaybackService : MediaSessionService() {
     }
 
     private fun initMediaSession() {
+        if (mediaSession != null) return
+
         val manager = getOrCreatePlaybackManager()
         val underlyingPlayer = manager.player ?: try {
             ExoPlayer.Builder(applicationContext).build()
@@ -140,11 +143,14 @@ class PlaybackService : MediaSessionService() {
             }
         setMediaNotificationProvider(notificationProvider)
 
-        mediaSession = MediaSession.Builder(this, forwardingPlayer)
+        val session = MediaSession.Builder(this, forwardingPlayer)
             .setSessionActivity(sessionActivityIntent)
             .setId("MioraMediaSession")
             .setCallback(MediaSessionCallback())
             .build()
+
+        mediaSession = session
+        addSession(session)
     }
 
     private inner class MediaSessionCallback : MediaSession.Callback {
@@ -170,6 +176,9 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        if (mediaSession == null) {
+            initMediaSession()
+        }
         return mediaSession
     }
 
@@ -188,8 +197,9 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        isServiceRunning = false
         mediaSession?.run {
-            player.release()
+            removeSession(this)
             release()
             mediaSession = null
         }
@@ -205,17 +215,27 @@ class PlaybackService : MediaSessionService() {
         const val ACTION_PREVIOUS = "com.fahim.powerampclone.ACTION_PREVIOUS"
         const val ACTION_STOP = "com.fahim.powerampclone.ACTION_STOP"
 
+        @Volatile
+        private var isServiceRunning = false
+
+        fun isRunning(): Boolean = isServiceRunning
+
         fun start(context: Context) {
-            val intent = Intent(context, PlaybackService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
+            if (isServiceRunning) return
+            try {
+                val intent = Intent(context, PlaybackService::class.java)
                 context.startService(intent)
+            } catch (_: Throwable) {
+                // Ignore if background restrictions prevent startService.
+                // Media3's MediaSessionService automatically handles foreground transition when playback begins.
             }
         }
 
         fun stop(context: Context) {
-            context.stopService(Intent(context, PlaybackService::class.java))
+            isServiceRunning = false
+            try {
+                context.stopService(Intent(context, PlaybackService::class.java))
+            } catch (_: Throwable) {}
         }
     }
 }

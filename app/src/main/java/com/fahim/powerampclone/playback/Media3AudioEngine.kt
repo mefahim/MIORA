@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
 /**
@@ -171,9 +172,13 @@ open class Media3AudioEngine(
                     .setArtist(track.artist)
                     .setAlbumTitle(track.album)
 
-                val artworkBytes = getArtworkBytes(track)
-                if (artworkBytes != null) {
-                    metadataBuilder.setArtworkData(artworkBytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                val cachedBytes = getCachedArtworkBytes(track)
+                if (cachedBytes != null) {
+                    metadataBuilder.setArtworkData(cachedBytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                } else if (!track.artworkUriString.isNullOrBlank()) {
+                    try {
+                        metadataBuilder.setArtworkUri(Uri.parse(track.artworkUriString))
+                    } catch (_: Throwable) {}
                 }
 
                 val mediaItem = MediaItem.Builder()
@@ -187,6 +192,11 @@ open class Media3AudioEngine(
                     prepare()
                     play()
                 }
+
+                if (cachedBytes == null) {
+                    loadArtworkAsync(track, token)
+                }
+
                 return
             } catch (e: Exception) {
                 _playbackError.value = "Failed to load audio: ${e.message}"
@@ -293,14 +303,53 @@ open class Media3AudioEngine(
         positionTrackerJob = null
     }
 
-    private fun getArtworkBytes(track: Track): ByteArray? {
+    private fun getCachedArtworkBytes(track: Track): ByteArray? {
+        val cacheKey = when {
+            track.id > 0L -> "track_${track.id}"
+            track.albumId > 0L -> "album_${track.albumId}"
+            else -> null
+        } ?: return null
+        val cached = ArtworkResolver.getCached(cacheKey) ?: return null
+        if (cached.isRecycled) return null
         return try {
-            val bitmap = ArtworkResolver.resolveArtwork(context, track, 320) ?: return null
             val stream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)
+            cached.compress(Bitmap.CompressFormat.JPEG, 85, stream)
             stream.toByteArray()
         } catch (_: Throwable) {
             null
+        }
+    }
+
+    private fun loadArtworkAsync(track: Track, token: Long) {
+        scope.launch(Dispatchers.IO) {
+            val bitmap = try {
+                ArtworkResolver.resolveArtwork(context, track, 320)
+            } catch (_: Throwable) {
+                null
+            }
+            if (bitmap != null && !bitmap.isRecycled && currentPlaybackToken == token) {
+                val stream = ByteArrayOutputStream()
+                val bytes = try {
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, stream)
+                    stream.toByteArray()
+                } catch (_: Throwable) {
+                    null
+                }
+                if (bytes != null && currentPlaybackToken == token) {
+                    withContext(Dispatchers.Main) {
+                        if (currentPlaybackToken == token && exoPlayer != null) {
+                            val player = exoPlayer ?: return@withContext
+                            val currentItem = player.currentMediaItem
+                            if (currentItem != null && currentItem.mediaId == track.id.toString()) {
+                                val updatedMetadata = currentItem.mediaMetadata.buildUpon()
+                                    .setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                                    .build()
+                                player.playlistMetadata = updatedMetadata
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
