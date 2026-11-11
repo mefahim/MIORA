@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">MIORA</string>
     <string name="app_tagline">Your music. Your moments.</string>
+    <string name="notification_channel_name">MIORA Playback</string>
+    <string name="notification_channel_desc">Music playback controls and information</string>
 </resources>

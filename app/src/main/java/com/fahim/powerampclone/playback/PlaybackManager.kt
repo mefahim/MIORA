@@ -1,6 +1,7 @@
 package com.fahim.powerampclone.playback
 
 import android.content.Context
+import androidx.media3.common.Player
 import com.fahim.powerampclone.data.MusicRepository
 import com.fahim.powerampclone.model.RepeatMode
 import com.fahim.powerampclone.model.Track
@@ -25,6 +26,8 @@ class PlaybackManager(
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
 
     val equalizerController: EqualizerController? get() = audioEngine.equalizerController
+    val player: Player? get() = audioEngine.player
+    val audioEngineInstance: AudioEngine get() = audioEngine
 
     init {
         val initialTracks = repository.tracks()
@@ -114,14 +117,17 @@ class PlaybackManager(
         context?.let { PlaybackService.start(it) }
     }
 
-    fun togglePlayPause() {
-        val current = _state.value
-        val track = current.currentTrack ?: return
-
-        if (current.isPlaying) {
+    fun pause() {
+        if (_state.value.isPlaying) {
             _state.update { it.copy(isPlaying = false) }
             audioEngine.pause()
-        } else {
+        }
+    }
+
+    fun resume() {
+        val current = _state.value
+        val track = current.currentTrack ?: return
+        if (!current.isPlaying) {
             _state.update { it.copy(isPlaying = true) }
             if (audioEngine.currentPositionMs.value > 0L) {
                 audioEngine.resume()
@@ -129,6 +135,14 @@ class PlaybackManager(
                 audioEngine.play(track)
             }
             context?.let { PlaybackService.start(it) }
+        }
+    }
+
+    fun togglePlayPause() {
+        if (_state.value.isPlaying) {
+            pause()
+        } else {
+            resume()
         }
     }
 

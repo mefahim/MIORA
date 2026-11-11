@@ -1,5 +1,6 @@
 package com.fahim.powerampclone.playback
 
+import androidx.media3.common.Player
 import com.fahim.powerampclone.model.Track
 import kotlinx.coroutines.flow.StateFlow
 
@@ -12,6 +13,8 @@ interface AudioEngine {
     val durationMs: StateFlow<Long>
     val playbackError: StateFlow<String?>
     val equalizerController: EqualizerController? get() = null
+    val player: Player? get() = null
+    val audioSessionId: Int get() = 0
 
     fun play(track: Track)
     fun pause()

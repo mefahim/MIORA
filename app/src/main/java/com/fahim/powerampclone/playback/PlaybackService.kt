@@ -1,60 +1,43 @@
 package com.fahim.powerampclone.playback
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ServiceInfo
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.media.MediaMetadata
-import android.media.session.MediaSession
-import android.media.session.PlaybackState
-import android.net.Uri
 import android.os.Build
-import android.os.IBinder
-import android.provider.MediaStore
-import android.util.Size
+import androidx.annotation.OptIn
+import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.DefaultMediaNotificationProvider
+import androidx.media3.session.MediaSession
+import androidx.media3.session.MediaSessionService
 import com.fahim.powerampclone.MainActivity
 import com.fahim.powerampclone.R
-import com.fahim.powerampclone.artwork.ArtworkResolver
 import com.fahim.powerampclone.data.local.MediaStoreMusicRepository
-import com.fahim.powerampclone.model.Track
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlin.math.abs
 
-class PlaybackService : Service() {
+@OptIn(UnstableApi::class)
+class PlaybackService : MediaSessionService() {
 
-    private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
-    private var stateObserverJob: Job? = null
-    private lateinit var mediaSession: MediaSession
-    private lateinit var notificationManager: NotificationManager
+    private var mediaSession: MediaSession? = null
 
     override fun onCreate() {
         super.onCreate()
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
         initMediaSession()
-        observePlaybackManager()
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "MIORA Playback",
+                getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "Music playback controls and information"
+                description = getString(R.string.notification_channel_desc)
                 setShowBadge(false)
             }
             notificationManager.createNotificationChannel(channel)
@@ -67,129 +50,79 @@ class PlaybackService : Service() {
     }
 
     private fun initMediaSession() {
-        mediaSession = MediaSession(this, "MioraMediaSession").apply {
-            setCallback(object : MediaSession.Callback() {
-                override fun onPlay() {
-                    getOrCreatePlaybackManager().togglePlayPause()
-                }
-
-                override fun onPause() {
-                    getOrCreatePlaybackManager().togglePlayPause()
-                }
-
-                override fun onSkipToNext() {
-                    getOrCreatePlaybackManager().next()
-                }
-
-                override fun onSkipToPrevious() {
-                    getOrCreatePlaybackManager().previous()
-                }
-
-                override fun onSeekTo(pos: Long) {
-                    getOrCreatePlaybackManager().seekTo(pos)
-                }
-
-                override fun onStop() {
-                    getOrCreatePlaybackManager().togglePlayPause()
-                    stopForeground(STOP_FOREGROUND_REMOVE)
-                    stopSelf()
-                }
-            })
-            isActive = true
-        }
-    }
-
-    private fun observePlaybackManager() {
-        stateObserverJob?.cancel()
         val manager = getOrCreatePlaybackManager()
-        stateObserverJob = scope.launch {
-            manager.state.collect { state ->
-                val track = state.currentTrack
-                val duration = if (state.durationMs > 0L) state.durationMs else (track?.durationMs ?: 0L)
-                updateMediaSessionState(state.isPlaying, state.positionMs, duration)
-                if (track != null) {
-                    val artworkBitmap = getTrackArtworkBitmap(track)
-                    updateMediaSessionMetadata(track, duration, artworkBitmap)
-                    val notification = buildNotification(track, state.isPlaying, artworkBitmap)
-                    if (state.isPlaying) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-                        } else {
-                            startForeground(NOTIFICATION_ID, notification)
-                        }
-                    } else {
-                        notificationManager.notify(NOTIFICATION_ID, notification)
-                    }
+        val underlyingPlayer = manager.player ?: try {
+            ExoPlayer.Builder(applicationContext).build()
+        } catch (_: Throwable) {
+            null
+        }
+
+        if (underlyingPlayer == null) return
+
+        val forwardingPlayer = object : ForwardingPlayer(underlyingPlayer) {
+            override fun seekToNext() {
+                getOrCreatePlaybackManager().next()
+            }
+
+            override fun seekToPrevious() {
+                getOrCreatePlaybackManager().previous()
+            }
+
+            override fun seekToNextMediaItem() {
+                getOrCreatePlaybackManager().next()
+            }
+
+            override fun seekToPreviousMediaItem() {
+                getOrCreatePlaybackManager().previous()
+            }
+
+            override fun play() {
+                getOrCreatePlaybackManager().resume()
+            }
+
+            override fun pause() {
+                getOrCreatePlaybackManager().pause()
+            }
+
+            override fun stop() {
+                getOrCreatePlaybackManager().pause()
+            }
+
+            override fun seekTo(positionMs: Long) {
+                getOrCreatePlaybackManager().seekTo(positionMs)
+            }
+
+            override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
+                getOrCreatePlaybackManager().seekTo(positionMs)
+            }
+
+            override fun isCommandAvailable(command: Int): Boolean {
+                return when (command) {
+                    Player.COMMAND_SEEK_TO_NEXT,
+                    Player.COMMAND_SEEK_TO_PREVIOUS,
+                    Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                    Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                    Player.COMMAND_PLAY_PAUSE,
+                    Player.COMMAND_STOP,
+                    Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM -> true
+                    else -> super.isCommandAvailable(command)
                 }
             }
+
+            override fun getAvailableCommands(): Player.Commands {
+                return super.getAvailableCommands().buildUpon()
+                    .add(Player.COMMAND_SEEK_TO_NEXT)
+                    .add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                    .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                    .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                    .add(Player.COMMAND_PLAY_PAUSE)
+                    .add(Player.COMMAND_STOP)
+                    .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                    .build()
+            }
         }
-    }
 
-    private fun updateMediaSessionState(isPlaying: Boolean, positionMs: Long, durationMs: Long) {
-        val stateBuilder = PlaybackState.Builder()
-            .setActions(
-                PlaybackState.ACTION_PLAY or
-                    PlaybackState.ACTION_PAUSE or
-                    PlaybackState.ACTION_PLAY_PAUSE or
-                    PlaybackState.ACTION_SKIP_TO_NEXT or
-                    PlaybackState.ACTION_SKIP_TO_PREVIOUS or
-                    PlaybackState.ACTION_SEEK_TO or
-                    PlaybackState.ACTION_STOP,
-            )
-            .setState(
-                if (isPlaying) PlaybackState.STATE_PLAYING else PlaybackState.STATE_PAUSED,
-                positionMs,
-                1.0f,
-            )
-        mediaSession.setPlaybackState(stateBuilder.build())
-    }
-
-    private fun updateMediaSessionMetadata(track: Track, durationMs: Long, artwork: Bitmap?) {
-        val metadataBuilder = MediaMetadata.Builder()
-            .putString(MediaMetadata.METADATA_KEY_TITLE, track.title)
-            .putString(MediaMetadata.METADATA_KEY_ARTIST, track.artist)
-            .putString(MediaMetadata.METADATA_KEY_ALBUM, track.album)
-            .putLong(MediaMetadata.METADATA_KEY_DURATION, durationMs)
-
-        if (artwork != null) {
-            metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, artwork)
-            metadataBuilder.putBitmap(MediaMetadata.METADATA_KEY_ART, artwork)
-        }
-        mediaSession.setMetadata(metadataBuilder.build())
-    }
-
-    private fun getTrackArtworkBitmap(track: Track): Bitmap {
-        val resolved = ArtworkResolver.resolveArtwork(this, track, targetSize = 320)
-        if (resolved != null) return resolved
-        return createFallbackArtworkBitmap(track)
-    }
-
-    private fun createFallbackArtworkBitmap(track: Track): Bitmap {
-        val size = 256
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        val h = abs(track.artworkSeed.hashCode()) % 360
-        val hsv = floatArrayOf(h.toFloat(), 0.65f, 0.35f)
-        paint.color = Color.HSVToColor(hsv)
-        canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
-
-        paint.color = Color.argb(45, 255, 255, 255)
-        canvas.drawCircle((size / 2).toFloat(), (size / 2).toFloat(), (size * 0.35f), paint)
-
-        paint.color = Color.WHITE
-        paint.textSize = 80f
-        paint.textAlign = Paint.Align.CENTER
-        val letter = track.title.trim().take(1).uppercase().ifEmpty { "M" }
-        val yPos = (size / 2 - (paint.descent() + paint.ascent()) / 2)
-        canvas.drawText(letter, (size / 2).toFloat(), yPos, paint)
-
-        return bitmap
-    }
-
-    private fun buildNotification(track: Track, isPlaying: Boolean, artwork: Bitmap): Notification {
-        val contentIntent = PendingIntent.getActivity(
+        val sessionActivityIntent = PendingIntent.getActivity(
             this,
             0,
             Intent(this, MainActivity::class.java).apply {
@@ -198,77 +131,46 @@ class PlaybackService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val prevIntent = PendingIntent.getService(
-            this,
-            1,
-            Intent(this, PlaybackService::class.java).apply { action = ACTION_PREVIOUS },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val notificationProvider = DefaultMediaNotificationProvider.Builder(applicationContext)
+            .setChannelId(CHANNEL_ID)
+            .setChannelName(R.string.notification_channel_name)
+            .setNotificationId(NOTIFICATION_ID)
+            .build().apply {
+                setSmallIcon(R.drawable.ic_notification_music)
+            }
+        setMediaNotificationProvider(notificationProvider)
 
-        val playPauseIntent = PendingIntent.getService(
-            this,
-            2,
-            Intent(this, PlaybackService::class.java).apply { action = ACTION_PLAY_PAUSE },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        val nextIntent = PendingIntent.getService(
-            this,
-            3,
-            Intent(this, PlaybackService::class.java).apply { action = ACTION_NEXT },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        val playPauseIcon = if (isPlaying) {
-            android.R.drawable.ic_media_pause
-        } else {
-            android.R.drawable.ic_media_play
-        }
-
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(this, CHANNEL_ID)
-        } else {
-            @Suppress("DEPRECATION")
-            Notification.Builder(this)
-        }
-
-        return builder
-            .setContentTitle(track.title)
-            .setContentText("${track.artist} • ${track.album}")
-            .setSmallIcon(R.drawable.ic_notification_music)
-            .setLargeIcon(artwork)
-            .setColor(0xFF0F766E.toInt())
-            .setColorized(true)
-            .setContentIntent(contentIntent)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setStyle(
-                Notification.MediaStyle()
-                    .setMediaSession(mediaSession.sessionToken)
-                    .setShowActionsInCompactView(0, 1, 2),
-            )
-            .addAction(
-                Notification.Action.Builder(
-                    android.graphics.drawable.Icon.createWithResource(this, android.R.drawable.ic_media_previous),
-                    "Previous",
-                    prevIntent,
-                ).build(),
-            )
-            .addAction(
-                Notification.Action.Builder(
-                    android.graphics.drawable.Icon.createWithResource(this, playPauseIcon),
-                    if (isPlaying) "Pause" else "Play",
-                    playPauseIntent,
-                ).build(),
-            )
-            .addAction(
-                Notification.Action.Builder(
-                    android.graphics.drawable.Icon.createWithResource(this, android.R.drawable.ic_media_next),
-                    "Next",
-                    nextIntent,
-                ).build(),
-            )
-            .setOngoing(isPlaying)
+        mediaSession = MediaSession.Builder(this, forwardingPlayer)
+            .setSessionActivity(sessionActivityIntent)
+            .setId("MioraMediaSession")
+            .setCallback(MediaSessionCallback())
             .build()
+    }
+
+    private inner class MediaSessionCallback : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): MediaSession.ConnectionResult {
+            val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon().build()
+            val playerCommands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
+                .add(Player.COMMAND_SEEK_TO_NEXT)
+                .add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                .add(Player.COMMAND_PLAY_PAUSE)
+                .add(Player.COMMAND_STOP)
+                .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                .build()
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(sessionCommands)
+                .setAvailablePlayerCommands(playerCommands)
+                .build()
+        }
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        return mediaSession
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -277,20 +179,20 @@ class PlaybackService : Service() {
             ACTION_NEXT -> getOrCreatePlaybackManager().next()
             ACTION_PREVIOUS -> getOrCreatePlaybackManager().previous()
             ACTION_STOP -> {
-                getOrCreatePlaybackManager().togglePlayPause()
+                getOrCreatePlaybackManager().pause()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
         }
-        return START_NOT_STICKY
+        return super.onStartCommand(intent, flags, startId)
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     override fun onDestroy() {
-        stateObserverJob?.cancel()
-        mediaSession.isActive = false
-        mediaSession.release()
+        mediaSession?.run {
+            player.release()
+            release()
+            mediaSession = null
+        }
         super.onDestroy()
     }
 
