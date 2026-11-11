@@ -75,6 +75,14 @@ object ArtworkResolver {
         cache.clear()
     }
 
+    fun invalidate(trackId: Long) {
+        cache.remove("track_$trackId")
+    }
+
+    fun invalidateAlbum(albumId: Long) {
+        cache.remove("album_$albumId")
+    }
+
     /**
      * Resolves artwork for a track or album synchronously/asynchronously.
      */

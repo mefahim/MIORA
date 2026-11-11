@@ -7,6 +7,10 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 
 object PermissionHelper {
+
+    /** Optional test hook to override permission checks in unit tests */
+    var permissionChecker: ((Context) -> Boolean)? = null
+
     /** Returns the exact permission string required for reading audio files on this device */
     fun requiredMediaPermission(): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -18,7 +22,12 @@ object PermissionHelper {
 
     /** Returns true if the app has permission to read audio files from device storage */
     fun hasMediaPermission(context: Context): Boolean {
-        val permission = requiredMediaPermission()
-        return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        permissionChecker?.let { return it(context) }
+        return try {
+            val permission = requiredMediaPermission()
+            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        } catch (_: Throwable) {
+            false
+        }
     }
 }
