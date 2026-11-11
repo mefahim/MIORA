@@ -151,14 +151,13 @@ fun NowPlayingScreen(
                             .padding(Spacing.lg),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        AlbumArt(
-                            seed = track.artworkSeed,
-                            title = track.title,
+                        SwipeableAlbumArt(
+                            track = track,
                             size = 280.dp,
                             cornerRadius = 24.dp,
-                            albumId = track.albumId,
-                            track = track,
                             bitmap = artworkBitmap,
+                            onSwipeNext = { playerViewModel.next() },
+                            onSwipePrevious = { playerViewModel.previous() },
                         )
                         Spacer(Modifier.width(Spacing.xxl))
                         PlayerControlsColumn(
@@ -180,14 +179,13 @@ fun NowPlayingScreen(
                             .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        AlbumArt(
-                            seed = track.artworkSeed,
-                            title = track.title,
+                        SwipeableAlbumArt(
+                            track = track,
                             size = 300.dp,
                             cornerRadius = 24.dp,
-                            albumId = track.albumId,
-                            track = track,
                             bitmap = artworkBitmap,
+                            onSwipeNext = { playerViewModel.next() },
+                            onSwipePrevious = { playerViewModel.previous() },
                         )
                         Spacer(Modifier.height(Spacing.lg))
                         PlayerControlsColumn(
@@ -266,24 +264,17 @@ private fun PlayerControlsColumn(
             if (currentDuration > 0L) (state.positionMs.toFloat() / currentDuration).coerceIn(0f, 1f) else 0f
         }
 
-        // Progress Slider
-        Slider(
-            value = activeProgress,
-            onValueChange = {
-                isUserSeeking = true
-                userSeekProgress = it
-            },
-            onValueChangeFinished = {
-                val targetMs = (userSeekProgress * currentDuration).toLong()
+        // Interactive Waveform Seekbar
+        InteractiveWaveformSeekbar(
+            progress = activeProgress,
+            durationMs = currentDuration,
+            activeColor = dynamicPalette.primaryColor,
+            onSeek = { targetMs ->
                 playerViewModel.seekTo(targetMs)
-                isUserSeeking = false
             },
-            colors = SliderDefaults.colors(
-                thumbColor = dynamicPalette.primaryColor,
-                activeTrackColor = dynamicPalette.primaryColor,
-                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = Spacing.xs),
         )
 
         // Elapsed and Remaining Time

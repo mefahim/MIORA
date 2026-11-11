@@ -1,11 +1,16 @@
 package com.fahim.powerampclone.ui
 
 import android.graphics.Bitmap
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,11 +30,17 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,14 +57,15 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fahim.powerampclone.artwork.rememberArtworkBitmap
@@ -62,6 +75,7 @@ import com.fahim.powerampclone.model.Track
 import com.fahim.powerampclone.model.formatDuration
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /** Color helpers matching web-preview/js/artwork.js shadeHex() & mixHex() */
@@ -531,6 +545,193 @@ fun WaveformStrip(seed: Color, progress: Float, activeColor: Color = seed, modif
                 size = Size((barWidth - 2f).coerceAtLeast(1f), h),
                 cornerRadius = CornerRadius(2f, 2f),
             )
+        }
+    }
+}
+
+/**
+ * Cover art container supporting horizontal swipe gestures for Next / Previous track.
+ *
+ * Features:
+ * - Direct horizontal drag gesture tracking.
+ * - Smooth spring-based return animation on drag release.
+ * - Directional threshold triggering (swipe left for Next, swipe right for Previous).
+ * - Prevents conflicts with vertical scrolling and tap interactions.
+ */
+@Composable
+fun SwipeableAlbumArt(
+    track: com.fahim.powerampclone.model.Track,
+    size: Dp,
+    cornerRadius: Dp,
+    onSwipeNext: () -> Unit,
+    onSwipePrevious: () -> Unit,
+    modifier: Modifier = Modifier,
+    bitmap: Bitmap? = null,
+) {
+    var dragOffsetX by remember { mutableFloatStateOf(0f) }
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = dragOffsetX,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "albumArtSwipeOffset",
+    )
+
+    Box(
+        modifier = modifier
+            .offset { IntOffset(animatedOffsetX.roundToInt(), 0) }
+            .pointerInput(track.id) {
+                detectHorizontalDragGestures(
+                    onDragStart = { dragOffsetX = 0f },
+                    onDragEnd = {
+                        val thresholdPx = 130f
+                        if (dragOffsetX < -thresholdPx) {
+                            onSwipeNext()
+                        } else if (dragOffsetX > thresholdPx) {
+                            onSwipePrevious()
+                        }
+                        dragOffsetX = 0f
+                    },
+                    onDragCancel = {
+                        dragOffsetX = 0f
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        dragOffsetX = (dragOffsetX + dragAmount).coerceIn(-320f, 320f)
+                    },
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        AlbumArt(
+            seed = track.artworkSeed,
+            title = track.title,
+            size = size,
+            cornerRadius = cornerRadius,
+            albumId = track.albumId,
+            track = track,
+            bitmap = bitmap,
+        )
+    }
+}
+
+/**
+ * Touch-interactive amplitude waveform seekbar.
+ *
+ * Features:
+ * - Accurate position-to-time mapping responding to touch taps and horizontal drags.
+ * - Real-time progress updates without fighting active playback.
+ * - Audible seeking on drag release / tap.
+ * - Loading and unavailable waveform fallback states.
+ * - Clear distinction of synthesized waveform envelope.
+ */
+@Composable
+fun InteractiveWaveformSeekbar(
+    progress: Float,
+    durationMs: Long,
+    activeColor: Color,
+    onSeek: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    inactiveColor: Color = activeColor.copy(alpha = 0.25f),
+    seed: Color = activeColor,
+    peaks: List<Float>? = null,
+    isLoading: Boolean = false,
+) {
+    val barPeaks = remember(peaks, seed) {
+        peaks?.takeIf { it.isNotEmpty() } ?: rememberPeaks(seed)
+    }
+
+    var isDragging by remember { mutableStateOf(false) }
+    var dragProgress by remember { mutableFloatStateOf(0f) }
+
+    val effectiveProgress = if (isDragging) dragProgress else progress.coerceIn(0f, 1f)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .pointerInput(durationMs) {
+                detectTapGestures { offset ->
+                    if (size.width > 0 && durationMs > 0L) {
+                        val fraction = (offset.x / size.width).coerceIn(0f, 1f)
+                        onSeek((fraction * durationMs).toLong())
+                    }
+                }
+            }
+            .pointerInput(durationMs) {
+                detectHorizontalDragGestures(
+                    onDragStart = { offset ->
+                        isDragging = true
+                        if (size.width > 0) {
+                            dragProgress = (offset.x / size.width).coerceIn(0f, 1f)
+                        }
+                    },
+                    onDragEnd = {
+                        isDragging = false
+                        if (durationMs > 0L) {
+                            onSeek((dragProgress * durationMs).toLong())
+                        }
+                    },
+                    onDragCancel = {
+                        isDragging = false
+                    },
+                    onHorizontalDrag = { change, _ ->
+                        change.consume()
+                        if (size.width > 0) {
+                            dragProgress = (change.position.x / size.width).coerceIn(0f, 1f)
+                        }
+                    },
+                )
+            }
+            .semantics {
+                contentDescription = "Interactive Waveform Seekbar"
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = activeColor,
+                strokeWidth = 2.dp,
+            )
+        } else {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val totalBars = barPeaks.size
+                if (totalBars == 0) return@Canvas
+
+                val barWidth = size.width / totalBars
+                val playheadX = effectiveProgress * size.width
+
+                barPeaks.forEachIndexed { i, peak ->
+                    val barX = i * barWidth
+                    val barCenterX = barX + (barWidth / 2f)
+                    val isPlayed = barCenterX <= playheadX
+                    val h = (size.height * peak * 0.85f).coerceAtLeast(6f)
+                    val y = (size.height - h) / 2f
+
+                    drawRoundRect(
+                        color = if (isPlayed) activeColor else inactiveColor,
+                        topLeft = Offset(barX + 1f, y),
+                        size = Size((barWidth - 2.5f).coerceAtLeast(1f), h),
+                        cornerRadius = CornerRadius(2f, 2f),
+                    )
+                }
+
+                // Playhead indicator
+                drawLine(
+                    color = activeColor,
+                    start = Offset(playheadX, 2f),
+                    end = Offset(playheadX, size.height - 2f),
+                    strokeWidth = 3f,
+                    cap = StrokeCap.Round,
+                )
+                drawCircle(
+                    color = activeColor,
+                    radius = if (isDragging) 14f else 8f,
+                    center = Offset(playheadX, size.height / 2f),
+                )
+            }
         }
     }
 }
