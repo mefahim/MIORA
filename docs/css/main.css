@@ -1202,6 +1202,122 @@ img, svg {
   margin-right: auto;
 }
 
+/* Release Spotlight Banner */
+.release-spotlight-banner {
+  margin-top: 48px;
+  padding: 24px 32px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(0, 149, 135, 0.12) 0%, rgba(30, 58, 138, 0.12) 100%);
+  border: 1px solid var(--accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.spotlight-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.spotlight-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+
+.spotlight-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.spotlight-text h4 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.spotlight-text p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Installation Guide Steps */
+.install-guide-section {
+  margin-top: 36px;
+  text-align: left;
+}
+
+.install-guide-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.install-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.install-step-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.install-step-num {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--accent-light);
+  font-family: var(--font-mono);
+}
+
+.install-step-card h5 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.install-step-card p {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+@media (max-width: 768px) {
+  .install-steps-grid {
+    grid-template-columns: 1fr;
+  }
+  .release-spotlight-banner {
+    padding: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* ==========================================================================
    Open Source & GitHub Section
    ========================================================================== */

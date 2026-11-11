@@ -53,9 +53,21 @@ function hydrateReleaseConfig() {
     el.textContent = cfg.minAndroid;
   });
 
+  document.querySelectorAll("[data-config-package]").forEach(el => {
+    if (cfg.packageId) el.textContent = cfg.packageId;
+  });
+
+  document.querySelectorAll("[data-config-target-android]").forEach(el => {
+    if (cfg.targetAndroid) el.textContent = cfg.targetAndroid;
+  });
+
   // Hydrate anchor URLs
   document.querySelectorAll("[data-download-apk]").forEach(el => {
     if (cfg.downloadUrl) el.setAttribute("href", cfg.downloadUrl);
+  });
+
+  document.querySelectorAll("[data-checksum-url]").forEach(el => {
+    if (cfg.checksumUrl) el.setAttribute("href", cfg.checksumUrl);
   });
 
   document.querySelectorAll("[data-release-notes]").forEach(el => {

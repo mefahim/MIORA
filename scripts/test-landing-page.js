@@ -133,6 +133,30 @@ assert(faqItems.length === 6, `FAQ contains exactly 6 verified questions (found 
 assert(html.includes('aria-expanded="false"'), 'FAQ items initialize with aria-expanded="false"');
 assert(html.includes('aria-controls="faq-a1"'), 'FAQ question 1 controls panel a1');
 
+// 9. Stable Release & Download Link Integrity
+console.log('\n9. Validating Stable Release & Link Integrity...');
+assert(html.includes('Official Stable Release'), 'Hero and Download badges display "Official Stable Release"');
+assert(!html.includes('Public Beta'), 'Zero occurrences of "Public Beta" in landing page');
+assert(!html.includes('Download Beta'), 'Zero occurrences of "Download Beta" in landing page');
+assert(releaseConfig.downloadUrl === 'https://github.com/mefahim/MIORA/releases/download/v0.1.0/MIORA-v0.1.0.apk', 'Direct APK download URL is correct');
+assert(releaseConfig.checksumUrl === 'https://github.com/mefahim/MIORA/releases/download/v0.1.0/MIORA-v0.1.0.apk.sha256', 'Checksum download URL is correct');
+assert(releaseConfig.releaseNotesUrl === 'https://github.com/mefahim/MIORA/releases/tag/v0.1.0', 'Release notes URL is correct');
+assert(releaseConfig.packageId === 'com.fhf.miora', 'Package identity is com.fhf.miora');
+assert(releaseConfig.targetAndroid === 'Android 14 (API 34)', 'Target Android SDK is 34');
+
+// 10. Verified Feature Presentations & Installation Guide
+console.log('\n10. Validating Verified Feature Presentations & Installation Guide...');
+assert(html.includes('Pure Local Library'), 'Pure Local Library feature card present');
+assert(html.includes('Media3 Audio Engine'), 'Media3 Audio Engine feature card present');
+assert(html.includes('10-Band Hardware EQ'), '10-Band Hardware EQ feature card present');
+assert(html.includes('Synchronized Lyrics'), 'Synchronized Lyrics feature card present');
+assert(html.includes('Dynamic Palette Theming'), 'Dynamic Palette Theming feature card present');
+assert(html.includes('Persistent SQLite Playlists'), 'Persistent SQLite Playlists feature card present');
+assert(html.includes('Widget &amp; Android Auto'), 'Widget & Android Auto feature card present');
+assert(html.includes('Privacy &amp; In-App Updates'), 'Privacy & In-App Updates feature card present');
+assert(html.includes('MIORA v0.1.0 Milestone Achieved'), 'Release spotlight banner present');
+assert(html.includes('Quick Installation Guide'), 'Quick Installation Guide section present');
+
 console.log('\n====================================================');
 console.log(`Results: ${passedTests}/${totalTests} Passed (${failedTests} Failures)`);
 console.log('====================================================\n');
