@@ -5,29 +5,59 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.annotation.OptIn
 import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.DefaultMediaNotificationProvider
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
 import com.fahim.powerampclone.MainActivity
 import com.fahim.powerampclone.R
+import com.fahim.powerampclone.data.MockMusicRepository
+import com.fahim.powerampclone.data.MusicRepository
 import com.fahim.powerampclone.data.local.MediaStoreMusicRepository
+import com.fahim.powerampclone.model.Track
+import com.fahim.powerampclone.widget.MioraAppWidgetProvider
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
+/**
+ * Core MediaLibraryService for MIORA.
+ *
+ * Capabilities:
+ * - Extends [MediaLibraryService] to expose the music library hierarchy for Android Auto and MediaBrowser callers.
+ * - Bridges ExoPlayer with [PlaybackManager] via [ForwardingPlayer].
+ * - Synchronizes real-time playback state and track metadata with [MioraAppWidgetProvider].
+ * - Supports browsing Tracks, Albums, Artists, and Playlists.
+ */
 @OptIn(UnstableApi::class)
-class PlaybackService : MediaSessionService() {
+class PlaybackService : MediaLibraryService() {
 
-    private var mediaSession: MediaSession? = null
+    private var mediaLibrarySession: MediaLibrarySession? = null
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var stateObserverJob: Job? = null
+    private var cachedRepository: MusicRepository? = null
 
     override fun onCreate() {
         super.onCreate()
         isServiceRunning = true
         createNotificationChannel()
         initMediaSession()
+        observePlaybackStateForWidgets()
     }
 
     private fun createNotificationChannel() {
@@ -45,13 +75,41 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
+    private fun getOrCreateRepository(): MusicRepository {
+        val existing = cachedRepository
+        if (existing != null) return existing
+
+        val repo = try {
+            MediaStoreMusicRepository(applicationContext)
+        } catch (_: Throwable) {
+            MockMusicRepository()
+        }
+        cachedRepository = repo
+        return repo
+    }
+
     private fun getOrCreatePlaybackManager(): PlaybackManager {
         return PlaybackManager.currentInstance()
-            ?: PlaybackManager.getInstance(applicationContext, MediaStoreMusicRepository(applicationContext))
+            ?: PlaybackManager.getInstance(applicationContext, getOrCreateRepository())
+    }
+
+    private fun observePlaybackStateForWidgets() {
+        val manager = getOrCreatePlaybackManager()
+        stateObserverJob?.cancel()
+        stateObserverJob = serviceScope.launch {
+            manager.state.collect { state ->
+                MioraAppWidgetProvider.updateWidgets(
+                    context = applicationContext,
+                    track = state.currentTrack,
+                    isPlaying = state.isPlaying,
+                    artwork = null,
+                )
+            }
+        }
     }
 
     private fun initMediaSession() {
-        if (mediaSession != null) return
+        if (mediaLibrarySession != null) return
 
         val manager = getOrCreatePlaybackManager()
         val underlyingPlayer = manager.player ?: try {
@@ -143,17 +201,16 @@ class PlaybackService : MediaSessionService() {
             }
         setMediaNotificationProvider(notificationProvider)
 
-        val session = MediaSession.Builder(this, forwardingPlayer)
+        val session = MediaLibrarySession.Builder(this, forwardingPlayer, MediaLibraryCallback())
             .setSessionActivity(sessionActivityIntent)
-            .setId("MioraMediaSession")
-            .setCallback(MediaSessionCallback())
+            .setId("MioraMediaLibrarySession")
             .build()
 
-        mediaSession = session
+        mediaLibrarySession = session
         addSession(session)
     }
 
-    private inner class MediaSessionCallback : MediaSession.Callback {
+    private inner class MediaLibraryCallback : MediaLibrarySession.Callback {
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
@@ -173,35 +230,217 @@ class PlaybackService : MediaSessionService() {
                 .setAvailablePlayerCommands(playerCommands)
                 .build()
         }
+
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val rootItem = MediaItem.Builder()
+                .setMediaId(ROOT_ID)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle("MIORA Library")
+                        .setIsBrowsable(true)
+                        .setIsPlayable(false)
+                        .build(),
+                )
+                .build()
+            return Futures.immediateFuture(LibraryResult.ofItem(rootItem, params))
+        }
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val repository = getOrCreateRepository()
+            val items: List<MediaItem> = when (parentId) {
+                ROOT_ID -> {
+                    listOf(
+                        createCategoryItem(CATEGORY_SONGS, "Tracks"),
+                        createCategoryItem(CATEGORY_ALBUMS, "Albums"),
+                        createCategoryItem(CATEGORY_ARTISTS, "Artists"),
+                        createCategoryItem(CATEGORY_PLAYLISTS, "Playlists"),
+                    )
+                }
+                CATEGORY_SONGS -> {
+                    repository.tracks().map { mapTrackToMediaItem(it) }
+                }
+                CATEGORY_ALBUMS -> {
+                    repository.albums().map { album ->
+                        MediaItem.Builder()
+                            .setMediaId("album_${album.id}")
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setTitle(album.title)
+                                    .setArtist(album.artist)
+                                    .setIsBrowsable(true)
+                                    .setIsPlayable(false)
+                                    .build(),
+                            )
+                            .build()
+                    }
+                }
+                CATEGORY_ARTISTS -> {
+                    repository.artists().map { artist ->
+                        MediaItem.Builder()
+                            .setMediaId("artist_${artist.id}")
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setTitle(artist.name)
+                                    .setIsBrowsable(true)
+                                    .setIsPlayable(false)
+                                    .build(),
+                            )
+                            .build()
+                    }
+                }
+                CATEGORY_PLAYLISTS -> {
+                    repository.playlists().map { playlist ->
+                        MediaItem.Builder()
+                            .setMediaId("playlist_${playlist.id}")
+                            .setMediaMetadata(
+                                MediaMetadata.Builder()
+                                    .setTitle(playlist.name)
+                                    .setIsBrowsable(true)
+                                    .setIsPlayable(false)
+                                    .build(),
+                            )
+                            .build()
+                    }
+                }
+                else -> {
+                    when {
+                        parentId.startsWith("album_") -> {
+                            val albumId = parentId.removePrefix("album_").toLongOrNull()
+                            val album = albumId?.let { repository.albumById(it) }
+                            album?.trackIds?.mapNotNull { repository.trackById(it) }?.map { mapTrackToMediaItem(it) } ?: emptyList()
+                        }
+                        parentId.startsWith("artist_") -> {
+                            val artistId = parentId.removePrefix("artist_").toLongOrNull()
+                            val artist = artistId?.let { repository.artistById(it) }
+                            artist?.trackIds?.mapNotNull { repository.trackById(it) }?.map { mapTrackToMediaItem(it) } ?: emptyList()
+                        }
+                        parentId.startsWith("playlist_") -> {
+                            val playlistId = parentId.removePrefix("playlist_").toLongOrNull()
+                            val playlist = playlistId?.let { repository.playlistById(it) }
+                            playlist?.trackIds?.mapNotNull { repository.trackById(it) }?.map { mapTrackToMediaItem(it) } ?: emptyList()
+                        }
+                        else -> emptyList()
+                    }
+                }
+            }
+            return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(items), params))
+        }
+
+        override fun onGetItem(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            mediaId: String,
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val repository = getOrCreateRepository()
+            val trackId = mediaId.removePrefix("track_").toLongOrNull()
+            val track = trackId?.let { repository.trackById(it) }
+            return if (track != null) {
+                Futures.immediateFuture(LibraryResult.ofItem(mapTrackToMediaItem(track), null))
+            } else {
+                Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
+            }
+        }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>,
+        ): ListenableFuture<MutableList<MediaItem>> {
+            val repository = getOrCreateRepository()
+            val firstItem = mediaItems.firstOrNull()
+            if (firstItem != null) {
+                val trackId = firstItem.mediaId.removePrefix("track_").toLongOrNull()
+                val track = trackId?.let { repository.trackById(it) }
+                if (track != null) {
+                    getOrCreatePlaybackManager().playTrack(track)
+                }
+            }
+            return Futures.immediateFuture(mediaItems)
+        }
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
-        if (mediaSession == null) {
+    private fun createCategoryItem(id: String, title: String): MediaItem {
+        return MediaItem.Builder()
+            .setMediaId(id)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setIsBrowsable(true)
+                    .setIsPlayable(false)
+                    .build(),
+            )
+            .build()
+    }
+
+    private fun mapTrackToMediaItem(track: Track): MediaItem {
+        val uriString = track.contentUriString.ifEmpty { "content://media/external/audio/media/${track.id}" }
+        return MediaItem.Builder()
+            .setMediaId("track_${track.id}")
+            .setRequestMetadata(
+                MediaItem.RequestMetadata.Builder()
+                    .setMediaUri(Uri.parse(uriString))
+                    .build(),
+            )
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(track.title)
+                    .setArtist(track.artist)
+                    .setAlbumTitle(track.album)
+                    .setIsBrowsable(false)
+                    .setIsPlayable(true)
+                    .build(),
+            )
+            .build()
+    }
+
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
+        if (mediaLibrarySession == null) {
             initMediaSession()
         }
-        return mediaSession
+        return mediaLibrarySession
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val manager = getOrCreatePlaybackManager()
         when (intent?.action) {
-            ACTION_PLAY_PAUSE -> getOrCreatePlaybackManager().togglePlayPause()
-            ACTION_NEXT -> getOrCreatePlaybackManager().next()
-            ACTION_PREVIOUS -> getOrCreatePlaybackManager().previous()
+            ACTION_PLAY_PAUSE -> manager.togglePlayPause()
+            ACTION_NEXT -> manager.next()
+            ACTION_PREVIOUS -> manager.previous()
             ACTION_STOP -> {
-                getOrCreatePlaybackManager().pause()
+                manager.pause()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
         }
+        val currentState = manager.state.value
+        MioraAppWidgetProvider.updateWidgets(
+            context = applicationContext,
+            track = currentState.currentTrack,
+            isPlaying = currentState.isPlaying,
+            artwork = null,
+        )
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onDestroy() {
         isServiceRunning = false
-        mediaSession?.run {
+        stateObserverJob?.cancel()
+        serviceScope.cancel()
+        mediaLibrarySession?.run {
             removeSession(this)
             release()
-            mediaSession = null
+            mediaLibrarySession = null
         }
         super.onDestroy()
     }
@@ -215,6 +454,12 @@ class PlaybackService : MediaSessionService() {
         const val ACTION_PREVIOUS = "com.fahim.powerampclone.ACTION_PREVIOUS"
         const val ACTION_STOP = "com.fahim.powerampclone.ACTION_STOP"
 
+        const val ROOT_ID = "root"
+        const val CATEGORY_SONGS = "category_songs"
+        const val CATEGORY_ALBUMS = "category_albums"
+        const val CATEGORY_ARTISTS = "category_artists"
+        const val CATEGORY_PLAYLISTS = "category_playlists"
+
         @Volatile
         private var isServiceRunning = false
 
@@ -227,7 +472,7 @@ class PlaybackService : MediaSessionService() {
                 context.startService(intent)
             } catch (_: Throwable) {
                 // Ignore if background restrictions prevent startService.
-                // Media3's MediaSessionService automatically handles foreground transition when playback begins.
+                // Media3's MediaLibraryService automatically handles foreground transition when playback begins.
             }
         }
 
