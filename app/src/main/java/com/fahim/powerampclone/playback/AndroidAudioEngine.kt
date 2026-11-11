@@ -40,6 +40,8 @@ class AndroidAudioEngine(
     private val _playbackError = MutableStateFlow<String?>(null)
     override val playbackError: StateFlow<String?> = _playbackError.asStateFlow()
 
+    override val equalizerController = EqualizerController()
+
     private var onCompletionListener: (() -> Unit)? = null
     private var mediaPlayer: MediaPlayer? = null
     private var positionTrackerJob: Job? = null
@@ -137,6 +139,13 @@ class AndroidAudioEngine(
                 true
             }
         }
+
+        try {
+            val sessionId = mediaPlayer?.audioSessionId ?: 0
+            if (sessionId > 0) {
+                equalizerController.attachAudioSession(sessionId)
+            }
+        } catch (_: Exception) {}
     }
 
     @Synchronized
@@ -249,6 +258,7 @@ class AndroidAudioEngine(
 
     override fun release() {
         stop()
+        equalizerController.detach()
         try {
             mediaPlayer?.release()
         } catch (_: Exception) {}

@@ -290,7 +290,7 @@ private fun AppNavHost(
             SettingsScreen(settingsViewModel, onBack = back) { navigate(Routes.EQUALIZER) }
         }
         composable(Routes.EQUALIZER) {
-            EqualizerScreen(back)
+            EqualizerScreen(playerViewModel, back)
         }
         composable(Routes.LYRICS) {
             LyricsScreen(playerViewModel, back)

@@ -11,6 +11,7 @@ interface AudioEngine {
     val currentPositionMs: StateFlow<Long>
     val durationMs: StateFlow<Long>
     val playbackError: StateFlow<String?>
+    val equalizerController: EqualizerController? get() = null
 
     fun play(track: Track)
     fun pause()

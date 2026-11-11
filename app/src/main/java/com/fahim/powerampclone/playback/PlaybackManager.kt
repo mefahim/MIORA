@@ -24,6 +24,8 @@ class PlaybackManager(
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
 
+    val equalizerController: EqualizerController? get() = audioEngine.equalizerController
+
     init {
         val initialTracks = repository.tracks()
         _state.update {

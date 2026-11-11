@@ -6,6 +6,8 @@ import com.fahim.powerampclone.data.MockMusicRepository
 import com.fahim.powerampclone.data.MusicRepository
 import com.fahim.powerampclone.model.RepeatMode
 import com.fahim.powerampclone.model.Track
+import com.fahim.powerampclone.playback.EqualizerController
+import com.fahim.powerampclone.playback.EqualizerState
 import com.fahim.powerampclone.playback.PlaybackManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -41,6 +43,25 @@ class PlayerViewModel(
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = playbackManager?.state ?: _state.asStateFlow()
     private var ticker: Job? = null
+
+    val equalizerController: EqualizerController = playbackManager?.equalizerController ?: EqualizerController()
+    val equalizerState: StateFlow<EqualizerState> = equalizerController.state
+
+    fun setEqualizerBandGain(bandIndex: Int, gainDb: Float) {
+        equalizerController.setBandGain(bandIndex, gainDb)
+    }
+
+    fun setEqualizerPreset(presetName: String) {
+        equalizerController.setPreset(presetName)
+    }
+
+    fun setEqualizerEnabled(enabled: Boolean) {
+        equalizerController.setEnabled(enabled)
+    }
+
+    fun resetEqualizer() {
+        equalizerController.reset()
+    }
 
     init {
         if (playbackManager == null) {

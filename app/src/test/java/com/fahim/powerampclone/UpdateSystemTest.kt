@@ -7,6 +7,7 @@ import com.fahim.powerampclone.update.SemanticVersion
 import com.fahim.powerampclone.update.UpdateChannel
 import com.fahim.powerampclone.update.UpdateDecisionEngine
 import com.fahim.powerampclone.update.UpdateDownloadManager
+import com.fahim.powerampclone.update.UpdateInstaller
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -171,6 +172,26 @@ class UpdateSystemTest {
         } finally {
             tempFile.delete()
         }
+    }
+
+    @Test
+    fun updateInstaller_computesAndVerifiesCertificateFingerprints() {
+        val fakeCert1 = "SAMPLE_CERTIFICATE_PAYLOAD_1".toByteArray(Charsets.UTF_8)
+        val fakeCert2 = "SAMPLE_CERTIFICATE_PAYLOAD_2".toByteArray(Charsets.UTF_8)
+
+        val hash1 = UpdateInstaller.computeSha256Fingerprint(fakeCert1)
+        val hash2 = UpdateInstaller.computeSha256Fingerprint(fakeCert2)
+
+        assertEquals(64, hash1.length)
+        assertEquals(64, hash2.length)
+        assertFalse(hash1 == hash2)
+
+        // Matching fingerprints (case-insensitive)
+        assertTrue(UpdateInstaller.verifyCertificateFingerprints(hash1, hash1))
+        assertTrue(UpdateInstaller.verifyCertificateFingerprints(hash1, hash1.uppercase()))
+
+        // Non-matching fingerprints
+        assertFalse(UpdateInstaller.verifyCertificateFingerprints(hash1, hash2))
     }
 
     private fun createFakeRelease(tagName: String, isPrerelease: Boolean): ReleaseInfo {

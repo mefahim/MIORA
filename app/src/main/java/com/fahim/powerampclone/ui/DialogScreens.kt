@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fahim.powerampclone.design.Spacing
 import com.fahim.powerampclone.model.formatDuration
+import com.fahim.powerampclone.playback.EqualizerController
 import com.fahim.powerampclone.player.PlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -200,8 +201,13 @@ fun AudioInfoScreen(playerViewModel: PlayerViewModel, onBack: () -> Unit) {
                 Spacer(Modifier.height(Spacing.lg))
             }
             item {
+                val isRealFile = track.contentUriString.isNotBlank()
                 Text(
-                    text = "Sample metadata for the demo library — values are illustrative, not measured from a real file.",
+                    text = if (isRealFile) {
+                        "Direct MediaStore audio track — decoded via native Android audio engine."
+                    } else {
+                        "Sample metadata for the demo library — values are illustrative for sample tracks."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -239,21 +245,20 @@ private fun MetadataGroup(title: String, pairs: List<Pair<String, String>>) {
     }
 }
 
-/** Equalizer UI preview matching web-preview/js/settings.js equalizer() */
+/** Equalizer screen connected to hardware/software AudioEngine equalizer */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EqualizerScreen(onBack: () -> Unit) {
-    val presets = mapOf(
-        "Flat" to listOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f),
-        "Rock" to listOf(4f, 3f, 1f, 0f, -1f, 0f, 1f, 3f, 4f, 5f),
-        "Pop" to listOf(-1f, 0f, 2f, 3f, 3f, 2f, 0f, -1f, -1f, 0f),
-        "Jazz" to listOf(3f, 2f, 1f, 0f, -1f, 0f, 1f, 2f, 3f, 3f),
-        "Classical" to listOf(4f, 3f, 2f, 0f, -1f, -1f, 0f, 2f, 3f, 4f),
-    )
-    val frequencies = listOf("31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k")
-
-    var gains by remember { mutableStateOf(presets.getValue("Flat")) }
-    var preset by remember { mutableStateOf("Flat") }
+fun EqualizerScreen(
+    playerViewModel: PlayerViewModel? = null,
+    onBack: () -> Unit
+) {
+    val fallbackController = remember { EqualizerController() }
+    val eqState by (playerViewModel?.equalizerState ?: fallbackController.state).collectAsState()
+    val presets = EqualizerController.PRESETS
+    val frequencies = eqState.frequencies
+    val gains = eqState.bandGains
+    val preset = eqState.preset
+    val isHardwareAttached = eqState.isHardwareAttached
 
     Scaffold(
         topBar = {
@@ -279,9 +284,13 @@ fun EqualizerScreen(onBack: () -> Unit) {
                 Text("10-band equalizer", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 22.sp))
                 Spacer(Modifier.height(Spacing.xs))
                 Text(
-                    "Preview only — these faders do not process audio in Phase 2. The DSP engine arrives in a later phase.",
+                    text = if (isHardwareAttached) {
+                        "Hardware 10-band equalizer active — processing audio output in real-time."
+                    } else {
+                        "10-band equalizer active — adjusting audio playback profile."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isHardwareAttached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(Spacing.lg))
 
@@ -291,8 +300,11 @@ fun EqualizerScreen(onBack: () -> Unit) {
                         FilterChip(
                             selected = preset == name,
                             onClick = {
-                                preset = name
-                                gains = presets.getValue(name)
+                                if (playerViewModel != null) {
+                                    playerViewModel.setEqualizerPreset(name)
+                                } else {
+                                    fallbackController.setPreset(name)
+                                }
                             },
                             label = { Text(name) },
                             shape = RoundedCornerShape(999.dp),
@@ -306,8 +318,11 @@ fun EqualizerScreen(onBack: () -> Unit) {
                         FilterChip(
                             selected = false,
                             onClick = {
-                                preset = "Flat"
-                                gains = presets.getValue("Flat")
+                                if (playerViewModel != null) {
+                                    playerViewModel.resetEqualizer()
+                                } else {
+                                    fallbackController.reset()
+                                }
                             },
                             label = { Text("Reset") },
                             leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp)) },
@@ -333,7 +348,7 @@ fun EqualizerScreen(onBack: () -> Unit) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
-                                text = "${frequencies[i]} Hz",
+                                text = "${frequencies.getOrElse(i) { "${i+1}" }} Hz",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             )
                             Text(
@@ -345,8 +360,11 @@ fun EqualizerScreen(onBack: () -> Unit) {
                         Slider(
                             value = gain,
                             onValueChange = { v ->
-                                gains = gains.toMutableList().also { it[i] = v }
-                                preset = "Custom"
+                                if (playerViewModel != null) {
+                                    playerViewModel.setEqualizerBandGain(i, v)
+                                } else {
+                                    fallbackController.setBandGain(i, v)
+                                }
                             },
                             valueRange = -12f..12f,
                             steps = 23,
