@@ -19,8 +19,8 @@ class UpdateManager(
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main + Job())
 ) {
     companion object {
-        const val CURRENT_VERSION_NAME = "0.1.0-beta.1"
-        const val CURRENT_VERSION_CODE = 2
+        const val CURRENT_VERSION_NAME = "0.1.0"
+        const val CURRENT_VERSION_CODE = 3
     }
 
     private val _state = MutableStateFlow<UpdateState>(UpdateState.Idle)

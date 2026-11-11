@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0] - 2026-11-11
+
+### 🚀 Highlights
+- **First Stable Release (`v0.1.0`)**: Production-ready official release of MIORA (Music in Our Real Audio), target application ID `com.fhf.miora`.
+- **First-Launch Permission Onboarding**: Introduced a native 4-step wizard guiding new users through Welcome, Audio Library Permission (`READ_MEDIA_AUDIO` / `READ_EXTERNAL_STORAGE`), Notification Access (`POST_NOTIFICATIONS` for Android 13+), and an automatic initial local media scan.
+- **Dynamic Artwork Theming & Accent Fallback**: Implemented real-time dynamic palette extraction from album art with automatic, contrast-tested fallback to user-selected accent themes (`Ember`, `Ocean`, `Forest`, `Rose`, `Violet`, `Gold`, `Monochrome`) whenever dynamic color is disabled.
+- **Dynamic Song Count — Single Source of Truth**: Harmonized song and playlist counts across the main Library, Settings Profile, Music Scanner, and Playlist details, completely removing hardcoded counts and sample track fallbacks in production.
+- **UI/UX Polish & Layout Refinements**:
+  - Removed all obsolete Phase 2 preview, simulated playback, and sample library disclaimers across Player, Equalizer, Dialogs, and Search screens.
+  - Eliminated the redundant bottom waveform strip in the player interface, focusing playback navigation on the interactive seekbar.
+  - Fixed duplicate vertical overflow menu buttons on playlist track rows.
+  - Replaced cramped three-column buttons on empty playlists with a clean, touch-friendly "Add Tracks" primary action.
+  - Enabled multi-line text wrapping for long file paths in Track Info & Details dialogs to eliminate visual clipping.
+- **Comprehensive Quality Assurance**: 164 automated unit, stress, and regression tests passing 100% across 22 test suites.
+
+### Added
+- `OnboardingScreen.kt`: 4-step onboarding flow for permission granting and library initialization.
+- `FinalPolishRegressionTest.kt`: Unit tests verifying dynamic count consistency, mock decoupling, and accent palette fallbacks.
+- Documentation:
+  - `docs/FINAL_UI_UX_AUDIT.md`: Pre-release audit of real-device findings and visual defects.
+  - `docs/FINAL_UI_UX_FIX_REPORT.md`: Comprehensive report of UI/UX corrections.
+  - `docs/FINAL_PERMISSION_ONBOARDING_REPORT.md`: Architecture and implementation details of permission onboarding.
+  - `docs/FINAL_DATA_CONSISTENCY_REPORT.md`: Single source of truth count derivation report.
+  - `docs/FINAL_DYNAMIC_COLOR_VERIFICATION.md`: Verification of dynamic palette extraction and fallback.
+  - `docs/FINAL_RELEASE_VERIFICATION.md`: End-to-end verification and gate validation for `v0.1.0`.
+
+---
+
 ## [0.1.0-beta.2] - 2026-11-11
 
 ### 🚀 Highlights

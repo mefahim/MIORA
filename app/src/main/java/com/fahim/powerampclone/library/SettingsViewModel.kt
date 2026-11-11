@@ -26,6 +26,7 @@ data class SettingsUiState(
     val autoAddPlaylists: Boolean = true,
     val crossfade: String = "Off",
     val playbackMode: String = "Normal",
+    val hasCompletedOnboarding: Boolean = false,
 )
 
 class SettingsViewModel(
@@ -36,6 +37,7 @@ class SettingsViewModel(
     val state: StateFlow<SettingsUiState> = combine(
         store.themeMode, store.dynamicColor, store.accent,
         store.autoAddPlaylists, store.crossfade, store.playbackMode,
+        store.hasCompletedOnboarding,
     ) { args: Array<Any?> ->
         SettingsUiState(
             themeMode = args[0] as ThemeMode,
@@ -44,6 +46,7 @@ class SettingsViewModel(
             autoAddPlaylists = args[3] as Boolean,
             crossfade = args[4] as String,
             playbackMode = args[5] as String,
+            hasCompletedOnboarding = args[6] as Boolean,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -57,6 +60,7 @@ class SettingsViewModel(
     fun setAutoAddPlaylists(enabled: Boolean) = viewModelScope.launch { store.setAutoAddPlaylists(enabled) }
     fun setCrossfade(value: String) = viewModelScope.launch { store.setCrossfade(value) }
     fun setPlaybackMode(value: String) = viewModelScope.launch { store.setPlaybackMode(value) }
+    fun setCompletedOnboarding(completed: Boolean) = viewModelScope.launch { store.setCompletedOnboarding(completed) }
 
     fun setUpdateChannel(channel: UpdateChannel) {
         updateManager?.setChannel(channel)

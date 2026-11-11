@@ -6,6 +6,7 @@ package com.fahim.powerampclone.navigation
  * and category/detail/sheet screens.
  */
 object Routes {
+    const val ONBOARDING = "onboarding"
     const val HOME = "home"
     const val LIBRARY = "library"
     const val SONGS = "songs"

@@ -60,11 +60,11 @@ requiredAssets.forEach(asset => {
 // 2. Release Configuration Validation
 console.log('\n2. Validating Release Configuration...');
 const releaseConfig = require(JS_CONFIG_PATH);
-assert(releaseConfig.version === 'v0.1.0-beta.1', `Version is v0.1.0-beta.1 (got ${releaseConfig.version})`);
-assert(releaseConfig.versionCode === 2, `VersionCode is 2 (got ${releaseConfig.versionCode})`);
-assert(releaseConfig.sha256 === 'd125c381713f5b802ec2452733d8426ce90d8b2a8a7e0dd7ba69f923e28eed90', 'SHA-256 matches verified APK hash');
-assert(releaseConfig.apkSize === '17.07 MB', `APK size matches verified binary (got ${releaseConfig.apkSize})`);
-assert(releaseConfig.downloadUrl.includes('v0.1.0-beta.1/MIORA-v0.1.0-beta.1.apk'), 'Direct download URL is well-formed');
+assert(releaseConfig.version === 'v0.1.0', `Version is v0.1.0 (got ${releaseConfig.version})`);
+assert(releaseConfig.versionCode === 3, `VersionCode is 3 (got ${releaseConfig.versionCode})`);
+assert(releaseConfig.sha256 === '2fe958326f49537760c47437bbaadfc3627a14fb879ae4ea52d14ddcdaa47381', 'SHA-256 matches verified APK hash');
+assert(releaseConfig.apkSize === '20.51 MB', `APK size matches verified binary (got ${releaseConfig.apkSize})`);
+assert(releaseConfig.downloadUrl.includes('v0.1.0/MIORA-v0.1.0.apk'), 'Direct download URL is well-formed');
 assert(releaseConfig.repoUrl === 'https://github.com/mefahim/MIORA', 'Repository URL points to https://github.com/mefahim/MIORA');
 
 // 3. HTML Content, Metadata & Accessibility

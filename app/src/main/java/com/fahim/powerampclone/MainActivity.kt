@@ -63,6 +63,7 @@ import com.fahim.powerampclone.ui.LibraryScreen
 import com.fahim.powerampclone.ui.LyricsScreen
 import com.fahim.powerampclone.ui.MiniPlayer
 import com.fahim.powerampclone.ui.NowPlayingScreen
+import com.fahim.powerampclone.ui.OnboardingScreen
 import com.fahim.powerampclone.ui.PlaylistsScreen
 import com.fahim.powerampclone.ui.PlaylistDetailScreen
 import com.fahim.powerampclone.ui.QueueScreen
@@ -163,6 +164,7 @@ fun MioraApp() {
                     Column {
                         MiniPlayer(
                             playerViewModel = playerViewModel,
+                            dynamicColorEnabled = settingsState.dynamicColor,
                             onExpand = { navController.navigate(Routes.PLAYER) },
                         )
                         NavigationBar {
@@ -185,6 +187,12 @@ fun MioraApp() {
                 }
             },
         ) { padding ->
+            val startDestination = if (settingsState.hasCompletedOnboarding || PermissionHelper.hasMediaPermission(context)) {
+                Routes.HOME
+            } else {
+                Routes.ONBOARDING
+            }
+
             AppNavHost(
                 navController = navController,
                 playerViewModel = playerViewModel,
@@ -192,6 +200,7 @@ fun MioraApp() {
                 searchViewModel = searchViewModel,
                 settingsViewModel = settingsViewModel,
                 onRequestPermission = onRequestPermission,
+                startDestination = startDestination,
                 modifier = Modifier.fillMaxSize().padding(padding),
             )
         }
@@ -212,6 +221,7 @@ private fun AppNavHost(
     searchViewModel: SearchViewModel,
     settingsViewModel: SettingsViewModel,
     onRequestPermission: () -> Unit = {},
+    startDestination: String = Routes.HOME,
     modifier: Modifier = Modifier,
 ) {
     val navigate: (String) -> Unit = { navController.navigate(it) }
@@ -219,13 +229,26 @@ private fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME,
+        startDestination = startDestination,
         modifier = modifier,
         enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
         exitTransition = { fadeOut() },
         popEnterTransition = { fadeIn() },
         popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
     ) {
+        composable(Routes.ONBOARDING) {
+            OnboardingScreen(
+                libraryViewModel = libraryViewModel,
+                playerViewModel = playerViewModel,
+                settingsViewModel = settingsViewModel,
+                onFinished = {
+                    settingsViewModel.setCompletedOnboarding(true)
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.ONBOARDING) { inclusive = true }
+                    }
+                },
+            )
+        }
         composable(Routes.HOME) {
             HomeScreen(
                 libraryViewModel = libraryViewModel,
@@ -284,10 +307,20 @@ private fun AppNavHost(
             QueueScreen(playerViewModel, back) { navigate(Routes.PLAYER) }
         }
         composable(Routes.PLAYER) {
-            NowPlayingScreen(playerViewModel, back, navigate)
+            val settingsState by settingsViewModel.state.collectAsState()
+            NowPlayingScreen(
+                playerViewModel = playerViewModel,
+                dynamicColorEnabled = settingsState.dynamicColor,
+                onBack = back,
+                onNavigate = navigate,
+            )
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen(settingsViewModel, onBack = back) { navigate(Routes.EQUALIZER) }
+            SettingsScreen(
+                settingsViewModel = settingsViewModel,
+                libraryViewModel = libraryViewModel,
+                onBack = back,
+            ) { navigate(Routes.EQUALIZER) }
         }
         composable(Routes.EQUALIZER) {
             EqualizerScreen(playerViewModel, back)

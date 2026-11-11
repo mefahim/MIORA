@@ -23,6 +23,7 @@ class SettingsStore(private val context: Context) {
         private val AUTO_ADD_PLAYLISTS = booleanPreferencesKey("auto_add_playlists")
         private val CROSSFADE = stringPreferencesKey("crossfade")
         private val PLAYBACK_MODE = stringPreferencesKey("playback_mode")
+        private val COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map {
@@ -35,6 +36,7 @@ class SettingsStore(private val context: Context) {
     val autoAddPlaylists: Flow<Boolean> = context.dataStore.data.map { it[AUTO_ADD_PLAYLISTS] ?: true }
     val crossfade: Flow<String> = context.dataStore.data.map { it[CROSSFADE] ?: "Off" }
     val playbackMode: Flow<String> = context.dataStore.data.map { it[PLAYBACK_MODE] ?: "Normal" }
+    val hasCompletedOnboarding: Flow<Boolean> = context.dataStore.data.map { it[COMPLETED_ONBOARDING] ?: false }
 
     suspend fun setThemeMode(mode: ThemeMode) = context.dataStore.edit { it[THEME] = mode.name }
     suspend fun setDynamicColor(enabled: Boolean) = context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
@@ -42,4 +44,5 @@ class SettingsStore(private val context: Context) {
     suspend fun setAutoAddPlaylists(enabled: Boolean) = context.dataStore.edit { it[AUTO_ADD_PLAYLISTS] = enabled }
     suspend fun setCrossfade(value: String) = context.dataStore.edit { it[CROSSFADE] = value }
     suspend fun setPlaybackMode(value: String) = context.dataStore.edit { it[PLAYBACK_MODE] = value }
+    suspend fun setCompletedOnboarding(completed: Boolean) = context.dataStore.edit { it[COMPLETED_ONBOARDING] = completed }
 }

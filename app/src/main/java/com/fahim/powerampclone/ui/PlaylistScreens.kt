@@ -151,6 +151,9 @@ fun PlaylistsScreen(
                             albumId = firstTrack?.albumId,
                         )
                         Spacer(Modifier.width(Spacing.lg))
+                        val playlistTracks = libraryViewModel.tracksForPlaylist(playlist)
+                        val trackCount = playlistTracks.size
+                        val trackCountText = "$trackCount ${if (trackCount == 1) "track" else "tracks"}"
                         Column(Modifier.weight(1f)) {
                             Text(
                                 text = playlist.name,
@@ -159,7 +162,7 @@ fun PlaylistsScreen(
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
-                                text = "${playlist.trackIds.size} tracks" + if (playlist.isSmart) " • Smart playlist" else "",
+                                text = trackCountText + if (playlist.isSmart) " • Smart playlist" else "",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -359,49 +362,61 @@ fun PlaylistDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    val detailTrackCountText = "${tracks.size} ${if (tracks.size == 1) "track" else "tracks"}"
                     Text(
-                        text = "${tracks.size} tracks • ${formatDuration(totalDurationMs)}",
+                        text = "$detailTrackCountText • ${formatDuration(totalDurationMs)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(Spacing.lg))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                        Button(
-                            onClick = {
-                                if (tracks.isNotEmpty()) {
+                    if (tracks.isEmpty()) {
+                        if (!playlist.isSmart) {
+                            Button(
+                                onClick = { showAddTracksDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Icon(Icons.Filled.Add, contentDescription = null)
+                                Spacer(Modifier.width(Spacing.sm))
+                                Text("Add Tracks", style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
+                    } else {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Button(
+                                onClick = {
                                     playerViewModel.playTrack(tracks.first(), tracks)
                                     onOpenPlayer()
-                                }
-                            },
-                            enabled = tracks.isNotEmpty(),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        ) {
-                            Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                            Spacer(Modifier.width(Spacing.xs))
-                            Text("Play")
-                        }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            ) {
+                                Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                                Spacer(Modifier.width(Spacing.xs))
+                                Text("Play", maxLines = 1)
+                            }
 
-                        FilledTonalButton(
-                            onClick = {
-                                if (tracks.isNotEmpty()) {
+                            FilledTonalButton(
+                                onClick = {
                                     val shuffled = tracks.shuffled()
                                     playerViewModel.playTrack(shuffled.first(), shuffled)
                                     onOpenPlayer()
-                                }
-                            },
-                            enabled = tracks.isNotEmpty(),
-                        ) {
-                            Icon(Icons.Filled.Shuffle, contentDescription = null)
-                            Spacer(Modifier.width(Spacing.xs))
-                            Text("Shuffle")
-                        }
-
-                        if (!playlist.isSmart) {
-                            OutlinedButton(onClick = { showAddTracksDialog = true }) {
-                                Icon(Icons.Filled.Add, contentDescription = null)
+                                },
+                            ) {
+                                Icon(Icons.Filled.Shuffle, contentDescription = null)
                                 Spacer(Modifier.width(Spacing.xs))
-                                Text("Add")
+                                Text("Shuffle", maxLines = 1)
+                            }
+
+                            if (!playlist.isSmart) {
+                                OutlinedButton(onClick = { showAddTracksDialog = true }) {
+                                    Icon(Icons.Filled.Add, contentDescription = null)
+                                    Spacer(Modifier.width(Spacing.xs))
+                                    Text("Add", maxLines = 1)
+                                }
                             }
                         }
                     }
@@ -446,32 +461,6 @@ fun PlaylistDetailScreen(
                                 },
                                 onMoreClick = { trackMenuExpanded = true },
                             )
-                        }
-
-                        // Reorder buttons for user playlists
-                        if (!playlist.isSmart) {
-                            if (index > 0) {
-                                IconButton(
-                                    onClick = { libraryViewModel.reorderPlaylistTracks(playlist.id, index, index - 1) },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Filled.ArrowUpward, contentDescription = "Move Up", modifier = Modifier.size(18.dp))
-                                }
-                            }
-                            if (index < tracks.size - 1) {
-                                IconButton(
-                                    onClick = { libraryViewModel.reorderPlaylistTracks(playlist.id, index, index + 1) },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Filled.ArrowDownward, contentDescription = "Move Down", modifier = Modifier.size(18.dp))
-                                }
-                            }
-                        }
-
-                        Box {
-                            IconButton(onClick = { trackMenuExpanded = true }) {
-                                Icon(Icons.Filled.MoreVert, contentDescription = "More")
-                            }
 
                             DropdownMenu(
                                 expanded = trackMenuExpanded,
@@ -510,6 +499,26 @@ fun PlaylistDetailScreen(
                                             libraryViewModel.removeTrackFromPlaylist(playlist.id, track.id, index)
                                         },
                                     )
+                                }
+                            }
+                        }
+
+                        // Reorder buttons for user playlists
+                        if (!playlist.isSmart) {
+                            if (index > 0) {
+                                IconButton(
+                                    onClick = { libraryViewModel.reorderPlaylistTracks(playlist.id, index, index - 1) },
+                                    modifier = Modifier.size(36.dp),
+                                ) {
+                                    Icon(Icons.Filled.ArrowUpward, contentDescription = "Move Up", modifier = Modifier.size(18.dp))
+                                }
+                            }
+                            if (index < tracks.size - 1) {
+                                IconButton(
+                                    onClick = { libraryViewModel.reorderPlaylistTracks(playlist.id, index, index + 1) },
+                                    modifier = Modifier.size(36.dp),
+                                ) {
+                                    Icon(Icons.Filled.ArrowDownward, contentDescription = "Move Down", modifier = Modifier.size(18.dp))
                                 }
                             }
                         }

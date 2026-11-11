@@ -20,7 +20,7 @@ interface ReleaseClient {
 class HttpGitHubReleaseClient(
     private val owner: String = "mefahim",
     private val repo: String = "MIORA",
-    private val appVersion: String = "0.1.0-beta.1"
+    private val appVersion: String = "0.1.0"
 ) : ReleaseClient {
 
     override suspend fun fetchReleases(): Result<List<ReleaseInfo>> = withContext(Dispatchers.IO) {

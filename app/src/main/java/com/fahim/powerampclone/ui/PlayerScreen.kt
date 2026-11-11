@@ -85,6 +85,7 @@ import com.fahim.powerampclone.player.PlayerViewModel
 @Composable
 fun NowPlayingScreen(
     playerViewModel: PlayerViewModel,
+    dynamicColorEnabled: Boolean = true,
     onBack: () -> Unit,
     onNavigate: (String) -> Unit,
 ) {
@@ -92,14 +93,27 @@ fun NowPlayingScreen(
     val track = state.currentTrack
     val artworkBitmap = rememberArtworkBitmap(track = track, albumId = track?.albumId)
     val dynamicPalette = rememberDynamicPalette(track = track, bitmap = artworkBitmap)
+    val mioraPalette = LocalMioraPalette.current
 
-    val bgBrush = Brush.verticalGradient(
-        colors = listOf(
-            dynamicPalette.gradientTop,
-            dynamicPalette.gradientBottom,
-            MaterialTheme.colorScheme.background,
-        ),
-    )
+    val primaryColor = if (dynamicColorEnabled) dynamicPalette.primaryColor else mioraPalette.accent
+    val onPrimaryColor = if (dynamicColorEnabled) dynamicPalette.onPrimary else mioraPalette.onAccent
+    val bgBrush = if (dynamicColorEnabled) {
+        Brush.verticalGradient(
+            colors = listOf(
+                dynamicPalette.gradientTop,
+                dynamicPalette.gradientBottom,
+                MaterialTheme.colorScheme.background,
+            ),
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                mioraPalette.playerBg1,
+                mioraPalette.playerBg2,
+                MaterialTheme.colorScheme.background,
+            ),
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -112,7 +126,7 @@ fun NowPlayingScreen(
                 },
                 actions = {
                     IconButton(onClick = {}) {
-                        Icon(Icons.Filled.Cast, contentDescription = "Cast (not available in Phase 2)")
+                        Icon(Icons.Filled.Cast, contentDescription = "Cast")
                     }
                     IconButton(onClick = {}) {
                         Icon(Icons.Filled.MoreVert, contentDescription = "More options")
@@ -130,7 +144,7 @@ fun NowPlayingScreen(
                 .padding(padding),
         ) {
             if (track == null) {
-                EmptyState("Nothing playing", "Pick a song from your library to start simulated playback.", Modifier.fillMaxSize())
+                EmptyState("Nothing playing", "Pick a song from your library to start playback.", Modifier.fillMaxSize())
                 return@Box
             }
 
@@ -167,7 +181,8 @@ fun NowPlayingScreen(
                             onNavigate = onNavigate,
                             favoriteScale = favoriteScale,
                             progress = progress,
-                            dynamicPalette = dynamicPalette,
+                            primaryColor = primaryColor,
+                            onPrimaryColor = onPrimaryColor,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -195,7 +210,8 @@ fun NowPlayingScreen(
                             onNavigate = onNavigate,
                             favoriteScale = favoriteScale,
                             progress = progress,
-                            dynamicPalette = dynamicPalette,
+                            primaryColor = primaryColor,
+                            onPrimaryColor = onPrimaryColor,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -213,7 +229,8 @@ private fun PlayerControlsColumn(
     onNavigate: (String) -> Unit,
     favoriteScale: Float,
     progress: Float,
-    dynamicPalette: DynamicPalette,
+    primaryColor: Color,
+    onPrimaryColor: Color,
     modifier: Modifier,
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -246,7 +263,7 @@ private fun PlayerControlsColumn(
                 Icon(
                     imageVector = if (track.id in state.favorites) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = if (track.id in state.favorites) "Remove from favourites" else "Add to favourites",
-                    tint = if (track.id in state.favorites) dynamicPalette.primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (track.id in state.favorites) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(26.dp),
                 )
             }
@@ -268,7 +285,7 @@ private fun PlayerControlsColumn(
         InteractiveWaveformSeekbar(
             progress = activeProgress,
             durationMs = currentDuration,
-            activeColor = dynamicPalette.primaryColor,
+            activeColor = primaryColor,
             onSeek = { targetMs ->
                 playerViewModel.seekTo(targetMs)
             },
@@ -307,7 +324,7 @@ private fun PlayerControlsColumn(
                 Icon(
                     Icons.Filled.Shuffle,
                     contentDescription = if (state.shuffle) "Shuffle on" else "Shuffle off",
-                    tint = if (state.shuffle) dynamicPalette.primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (state.shuffle) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -323,8 +340,8 @@ private fun PlayerControlsColumn(
                 onClick = { playerViewModel.togglePlayPause() },
                 modifier = Modifier.size(72.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = dynamicPalette.primaryColor,
-                    contentColor = dynamicPalette.onPrimary,
+                    containerColor = primaryColor,
+                    contentColor = onPrimaryColor,
                 ),
             ) {
                 Icon(
@@ -353,16 +370,11 @@ private fun PlayerControlsColumn(
                 Icon(
                     icon,
                     contentDescription = label,
-                    tint = if (active) dynamicPalette.primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (active) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp),
                 )
             }
         }
-
-        Spacer(Modifier.height(Spacing.lg))
-
-        // Ambient Waveform Strip
-        WaveformStrip(seed = track.artworkSeed, progress = progress, activeColor = dynamicPalette.primaryColor)
 
         Spacer(Modifier.height(Spacing.lg))
 
@@ -402,15 +414,6 @@ private fun PlayerControlsColumn(
                 Text("Queue", style = MaterialTheme.typography.labelMedium)
             }
         }
-
-        Spacer(Modifier.height(Spacing.md))
-
-        Text(
-            text = "Simulated playback — no audio engine in Phase 2.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
@@ -418,6 +421,7 @@ private fun PlayerControlsColumn(
 @Composable
 fun MiniPlayer(
     playerViewModel: PlayerViewModel,
+    dynamicColorEnabled: Boolean = true,
     onExpand: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -427,6 +431,8 @@ fun MiniPlayer(
     val progress = if (currentDuration > 0L) (state.positionMs.toFloat() / currentDuration).coerceIn(0f, 1f) else 0f
     val artworkBitmap = rememberArtworkBitmap(track = track, albumId = track.albumId)
     val dynamicPalette = rememberDynamicPalette(track = track, bitmap = artworkBitmap)
+    val mioraPalette = LocalMioraPalette.current
+    val primaryColor = if (dynamicColorEnabled) dynamicPalette.primaryColor else mioraPalette.accent
 
     Surface(
         modifier = modifier
@@ -447,7 +453,7 @@ fun MiniPlayer(
                     modifier = Modifier
                         .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
                         .height(2.5.dp)
-                        .background(dynamicPalette.primaryColor),
+                        .background(primaryColor),
                 )
             }
 

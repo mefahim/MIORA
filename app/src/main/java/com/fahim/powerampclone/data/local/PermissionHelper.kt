@@ -30,4 +30,17 @@ object PermissionHelper {
             false
         }
     }
+
+    /** Returns true if the app has permission to post notifications (Android 13+) */
+    fun hasNotificationPermission(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            try {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } catch (_: Throwable) {
+                false
+            }
+        } else {
+            true
+        }
+    }
 }

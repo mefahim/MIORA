@@ -38,7 +38,7 @@ class MediaStoreMusicRepository(
     val playlistStore: PlaylistStore = SQLitePlaylistStore(context),
     val trackStore: TrackStore = SQLiteTrackStore(context),
     val scanner: AdvancedMediaScanner = AdvancedMediaScanner(trackStore),
-    private val fallbackRepository: MusicRepository = MockMusicRepository(playlistStore),
+    private val fallbackRepository: MusicRepository? = null,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
 ) : MusicRepository {
 
@@ -110,25 +110,30 @@ class MediaStoreMusicRepository(
     }
 
     override fun tracks(): List<Track> {
-        val raw = cachedLibrary?.tracks ?: fallbackRepository.tracks()
+        val raw = cachedLibrary?.tracks ?: fallbackRepository?.tracks() ?: emptyList()
         val favs = playlistStore.getFavoriteTrackIds()
         return raw.map { it.copy(isFavorite = favs.contains(it.id)) }
     }
 
     override fun albums(): List<Album> =
-        cachedLibrary?.albums ?: fallbackRepository.albums()
+        cachedLibrary?.albums ?: fallbackRepository?.albums() ?: emptyList()
 
     override fun artists(): List<Artist> =
-        cachedLibrary?.artists ?: fallbackRepository.artists()
+        cachedLibrary?.artists ?: fallbackRepository?.artists() ?: emptyList()
 
-    override fun playlists(): List<Playlist> =
-        playlistStore.getAllPlaylists()
+    override fun playlists(): List<Playlist> {
+        val all = playlistStore.getAllPlaylists()
+        return all.map { playlist ->
+            val validTrackIds = playlist.trackIds.filter { trackById(it) != null }
+            playlist.copy(trackIds = validTrackIds)
+        }
+    }
 
     override fun genres(): List<Genre> =
-        cachedLibrary?.genres ?: fallbackRepository.genres()
+        cachedLibrary?.genres ?: fallbackRepository?.genres() ?: emptyList()
 
     override fun folders(): List<MusicFolder> =
-        cachedLibrary?.folders ?: fallbackRepository.folders()
+        cachedLibrary?.folders ?: fallbackRepository?.folders() ?: emptyList()
 
     override fun recentlyPlayed(): List<Track> {
         val ids = playlistStore.getRecentlyPlayedTrackIds(50)
@@ -138,12 +143,12 @@ class MediaStoreMusicRepository(
         } else if (_isLocalLoaded.value) {
             tracks().take(6)
         } else {
-            fallbackRepository.recentlyPlayed()
+            fallbackRepository?.recentlyPlayed() ?: emptyList()
         }
     }
 
     override fun trackById(id: Long): Track? {
-        val t = (cachedLibrary?.tracks ?: fallbackRepository.tracks()).firstOrNull { it.id == id } ?: return null
+        val t = (cachedLibrary?.tracks ?: fallbackRepository?.tracks() ?: emptyList()).firstOrNull { it.id == id } ?: return null
         return t.copy(isFavorite = playlistStore.getFavoriteTrackIds().contains(id))
     }
 
@@ -153,8 +158,11 @@ class MediaStoreMusicRepository(
     override fun artistById(id: Long): Artist? =
         artists().firstOrNull { it.id == id }
 
-    override fun playlistById(id: Long): Playlist? =
-        playlistStore.getPlaylistById(id)
+    override fun playlistById(id: Long): Playlist? {
+        val p = playlistStore.getPlaylistById(id) ?: return null
+        val validTrackIds = p.trackIds.filter { trackById(it) != null }
+        return p.copy(trackIds = validTrackIds)
+    }
 
     override fun createPlaylist(name: String, artworkSeed: Color?): Playlist? =
         playlistStore.createPlaylist(name, artworkSeed)
@@ -216,6 +224,6 @@ class MediaStoreMusicRepository(
             )
         }
 
-        return fallbackRepository.search(query)
+        return fallbackRepository?.search(query) ?: MusicRepository.SearchResults(emptyList(), emptyList(), emptyList(), emptyList())
     }
 }

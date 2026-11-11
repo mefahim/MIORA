@@ -329,7 +329,7 @@ fun SearchScreen(
             } else if (results.tracks.isEmpty() && results.albums.isEmpty() && results.artists.isEmpty() && results.playlists.isEmpty()) {
                 EmptyState(
                     title = "No results for “${state.query}”",
-                    message = "Nothing in the sample library matches. Check the spelling or try an artist name like Aurora Lane.",
+                    message = "No matching songs, albums, or artists found. Check the spelling or try another search.",
                     actionLabel = "Clear search",
                     onAction = { searchViewModel.onQueryChange("") },
                 )

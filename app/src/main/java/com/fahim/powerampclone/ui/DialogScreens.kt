@@ -343,13 +343,8 @@ fun AudioInfoScreen(playerViewModel: PlayerViewModel, onBack: () -> Unit) {
                 Spacer(Modifier.height(Spacing.lg))
             }
             item {
-                val isRealFile = track.contentUriString.isNotBlank()
                 Text(
-                    text = if (isRealFile) {
-                        "Direct MediaStore audio track — decoded via native Android audio engine."
-                    } else {
-                        "Sample metadata for the demo library — values are illustrative for sample tracks."
-                    },
+                    text = "Direct MediaStore audio track — decoded via native Android Media3 audio engine.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -379,8 +374,17 @@ private fun MetadataGroup(title: String, pairs: List<Pair<String, String>>) {
                         .padding(vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(key, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                    Text(
+                        text = key,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = Spacing.md),
+                    )
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
                 }
             }
         }

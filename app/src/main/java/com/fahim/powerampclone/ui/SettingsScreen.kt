@@ -58,6 +58,7 @@ import com.fahim.powerampclone.design.AccentChoice
 import com.fahim.powerampclone.design.LocalMioraPalette
 import com.fahim.powerampclone.design.Spacing
 import com.fahim.powerampclone.design.ThemeMode
+import com.fahim.powerampclone.library.LibraryViewModel
 import com.fahim.powerampclone.library.SettingsViewModel
 import com.fahim.powerampclone.update.UpdateChannel
 import com.fahim.powerampclone.update.UpdateManager
@@ -67,6 +68,7 @@ import com.fahim.powerampclone.update.UpdateState
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
+    libraryViewModel: LibraryViewModel? = null,
     onBack: (() -> Unit)? = null,
     onNavigateEqualizer: () -> Unit,
 ) {
@@ -186,9 +188,11 @@ fun SettingsScreen(
                         Icon(Icons.Filled.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
                     }
                     Spacer(Modifier.width(Spacing.lg))
+                    val trackCount = libraryViewModel?.allTracks?.size ?: 0
+                    val trackCountText = "$trackCount ${if (trackCount == 1) "track" else "tracks"}"
                     Column {
                         Text("Music Lover", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Text("Local library • 20 sample tracks", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Local library • $trackCountText", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -231,7 +235,11 @@ fun SettingsScreen(
                 }
             }
             item {
-                SettingsRow("Scan for music", "Sample library — 20 tracks indexed", Icons.Filled.Folder) {}
+                val trackCount = libraryViewModel?.allTracks?.size ?: 0
+                val trackCountText = "$trackCount ${if (trackCount == 1) "track" else "tracks"}"
+                SettingsRow("Scan for music", "$trackCountText indexed", Icons.Filled.Folder) {
+                    libraryViewModel?.refresh()
+                }
             }
 
             item { SettingsGroupTitle("Player") }
@@ -241,12 +249,12 @@ fun SettingsScreen(
                 }
             }
             item {
-                SettingsRow("Crossfade", "${state.crossfade} — preview only, no audio engine yet", Icons.Filled.MusicNote) {
+                SettingsRow("Crossfade", state.crossfade, Icons.Filled.MusicNote) {
                     crossfadeDialog = true
                 }
             }
             item {
-                SettingsRow("Equalizer", "Preview only — sliders do not process audio in Phase 2", Icons.Filled.Tune) {
+                SettingsRow("Equalizer", "10-band hardware equalizer, tone controls & reverb", Icons.Filled.Tune) {
                     onNavigateEqualizer()
                 }
             }

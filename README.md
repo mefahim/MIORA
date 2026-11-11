@@ -4,8 +4,8 @@
 *Your music. Your moments.*
 
 [![Website](https://img.shields.io/badge/Website-mefahim.github.io%2FMIORA-009587.svg)](https://mefahim.github.io/MIORA/)
-[![Release](https://img.shields.io/badge/Release-v0.1.0--beta.1-blue.svg)](https://github.com/mefahim/MIORA/releases/tag/v0.1.0-beta.1)
-[![Tests](https://img.shields.io/badge/Tests-72%20Passed-brightgreen.svg)](https://github.com/mefahim/MIORA/actions)
+[![Release](https://img.shields.io/badge/Release-v0.1.0-blue.svg)](https://github.com/mefahim/MIORA/releases/tag/v0.1.0)
+[![Tests](https://img.shields.io/badge/Tests-164%20Passed-brightgreen.svg)](https://github.com/mefahim/MIORA/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-green.svg)](https://android.com)
 
@@ -19,8 +19,8 @@
 
 Download the official signed release binary directly from GitHub:
 
-📦 **[Download MIORA v0.1.0-beta.1 APK](https://github.com/mefahim/MIORA/releases/download/v0.1.0-beta.1/MIORA-v0.1.0-beta.1.apk)**  
-*(Size: ~17.1 MB • SHA-256 Checksum: `d125c381713f5b802ec2452733d8426ce90d8b2a8a7e0dd7ba69f923e28eed90`)*
+📦 **[Download MIORA v0.1.0 APK](https://github.com/mefahim/MIORA/releases/download/v0.1.0/MIORA-v0.1.0.apk)**  
+*(Size: ~20.5 MB • SHA-256 Checksum: `2fe958326f49537760c47437bbaadfc3627a14fb879ae4ea52d14ddcdaa47381`)*
 
 ---
 
@@ -118,7 +118,7 @@ All detailed technical research documents remain fully intact in the [`research/
 ```bash
 ./gradlew testDebugUnitTest --no-daemon
 ```
-*(All 72 tests execute in under 1 second with 100% pass rate)*
+*(All 164 unit, regression, and stress tests execute with 100% pass rate across 22 test suites)*
 
 ### Build Debug APK
 ```bash
