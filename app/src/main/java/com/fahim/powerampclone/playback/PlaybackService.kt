@@ -449,10 +449,10 @@ class PlaybackService : MediaLibraryService() {
         const val CHANNEL_ID = "miora_playback_channel"
         const val NOTIFICATION_ID = 1001
 
-        const val ACTION_PLAY_PAUSE = "com.fahim.powerampclone.ACTION_PLAY_PAUSE"
-        const val ACTION_NEXT = "com.fahim.powerampclone.ACTION_NEXT"
-        const val ACTION_PREVIOUS = "com.fahim.powerampclone.ACTION_PREVIOUS"
-        const val ACTION_STOP = "com.fahim.powerampclone.ACTION_STOP"
+        const val ACTION_PLAY_PAUSE = "com.fhf.miora.ACTION_PLAY_PAUSE"
+        const val ACTION_NEXT = "com.fhf.miora.ACTION_NEXT"
+        const val ACTION_PREVIOUS = "com.fhf.miora.ACTION_PREVIOUS"
+        const val ACTION_STOP = "com.fhf.miora.ACTION_STOP"
 
         const val ROOT_ID = "root"
         const val CATEGORY_SONGS = "category_songs"

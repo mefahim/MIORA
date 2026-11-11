@@ -9,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.fahim.powerampclone"
+        applicationId = "com.fhf.miora"
         minSdk = 26
         targetSdk = 34
         versionCode = 2
