@@ -114,4 +114,61 @@ object LrcParser {
             null
         }
     }
+
+    /**
+     * Resolves synchronized lyrics for a [com.fahim.powerampclone.model.Track].
+     * Checks embedded track lyrics first, then looks for companion `.lrc` files
+     * beside the source audio file via content resolver or file system.
+     */
+    fun resolveLyricsForTrack(context: android.content.Context?, track: com.fahim.powerampclone.model.Track): List<LyricLine> {
+        if (track.lyrics.isNotEmpty()) return track.lyrics
+
+        if (context != null && track.contentUriString.isNotBlank()) {
+            try {
+                val uri = android.net.Uri.parse(track.contentUriString)
+                if (uri.scheme == "file") {
+                    val lrcFile = findSiblingLrcFile(uri.path)
+                    if (lrcFile != null && lrcFile.exists() && lrcFile.canRead()) {
+                        val parsed = parseLrc(lrcFile.readText(Charsets.UTF_8))
+                        if (parsed.isNotEmpty()) return parsed
+                    }
+                } else if (uri.scheme == "content") {
+                    val proj = arrayOf(android.provider.MediaStore.Audio.Media.DATA)
+                    context.contentResolver.query(uri, proj, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val dataPath = cursor.getString(0)
+                            val lrcFile = findSiblingLrcFile(dataPath)
+                            if (lrcFile != null && lrcFile.exists() && lrcFile.canRead()) {
+                                val parsed = parseLrc(lrcFile.readText(Charsets.UTF_8))
+                                if (parsed.isNotEmpty()) return parsed
+                            }
+                        }
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
+
+        if (track.folderPath.isNotBlank() && track.folderPath != "/Music") {
+            try {
+                val folder = File(track.folderPath)
+                if (folder.exists() && folder.isDirectory) {
+                    val candidateNames = listOf(
+                        "${track.title}.lrc",
+                        "${track.artist} - ${track.title}.lrc",
+                        "${track.trackNumber.toString().padStart(2, '0')} - ${track.title}.lrc",
+                        "${track.trackNumber}. ${track.title}.lrc",
+                    )
+                    for (cand in candidateNames) {
+                        val file = File(folder, cand)
+                        if (file.exists() && file.isFile && file.canRead()) {
+                            val parsed = parseLrc(file.readText(Charsets.UTF_8))
+                            if (parsed.isNotEmpty()) return parsed
+                        }
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
+
+        return emptyList()
+    }
 }

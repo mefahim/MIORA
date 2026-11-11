@@ -28,6 +28,9 @@ class PlaybackManager(
     val equalizerController: EqualizerController? get() = audioEngine.equalizerController
     val player: Player? get() = audioEngine.player
     val audioEngineInstance: AudioEngine get() = audioEngine
+    val lyricOffsetStore: com.fahim.powerampclone.data.lyrics.LyricOffsetStore =
+        context?.let { com.fahim.powerampclone.data.lyrics.SharedPreferencesLyricOffsetStore(it) }
+            ?: com.fahim.powerampclone.data.lyrics.InMemoryLyricOffsetStore()
 
     init {
         val initialTracks = repository.tracks()

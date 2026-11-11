@@ -1,6 +1,7 @@
 package com.fahim.powerampclone.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -34,8 +37,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -55,8 +61,18 @@ import com.fahim.powerampclone.player.PlayerViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LyricsScreen(playerViewModel: PlayerViewModel, onBack: () -> Unit) {
+    val context = LocalContext.current
     val state by playerViewModel.state.collectAsState()
     val track = state.currentTrack
+    val currentLyrics by playerViewModel.currentTrackLyrics.collectAsState()
+    val offsetMs by playerViewModel.lyricOffsetMs.collectAsState()
+
+    // Trigger on-demand companion resolution when screen opens if lyrics not yet resolved
+    LaunchedEffect(track?.id) {
+        if (track != null && currentLyrics.isEmpty()) {
+            playerViewModel.loadLyricsForTrack(track, context)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -77,7 +93,44 @@ fun LyricsScreen(playerViewModel: PlayerViewModel, onBack: () -> Unit) {
             return@Scaffold
         }
 
+        val effectiveLyrics = if (currentLyrics.isNotEmpty()) currentLyrics else track.lyrics
+        val effectivePosition = state.positionMs + offsetMs
+
+        // Find current active lyric line
+        val activeIndex = remember(effectivePosition, effectiveLyrics) {
+            if (effectiveLyrics.isEmpty()) -1
+            else effectiveLyrics.indexOfLast { effectivePosition >= it.startMs }
+        }
+
+        val listState = rememberLazyListState()
+        var userIsScrolling by remember { mutableStateOf(false) }
+        var lastUserScrollTime by remember { mutableLongStateOf(0L) }
+
+        // Track user gesture scrolling so we don't fight their drag
+        LaunchedEffect(listState.isScrollInProgress) {
+            if (listState.isScrollInProgress) {
+                userIsScrolling = true
+                lastUserScrollTime = System.currentTimeMillis()
+            }
+        }
+
+        // Auto-resume sync scrolling after 4 seconds of idle
+        LaunchedEffect(userIsScrolling, state.positionMs) {
+            if (userIsScrolling && System.currentTimeMillis() - lastUserScrollTime > 4000L) {
+                userIsScrolling = false
+            }
+        }
+
+        // Auto-scroll to active lyric line smoothly
+        LaunchedEffect(activeIndex, userIsScrolling) {
+            if (!userIsScrolling && activeIndex >= 0 && activeIndex < effectiveLyrics.size) {
+                val targetIndex = (activeIndex - 1).coerceAtLeast(0)
+                listState.animateScrollToItem(targetIndex)
+            }
+        }
+
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -87,7 +140,7 @@ fun LyricsScreen(playerViewModel: PlayerViewModel, onBack: () -> Unit) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = Spacing.lg),
+                        .padding(bottom = Spacing.sm),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     AlbumArt(
@@ -99,35 +152,122 @@ fun LyricsScreen(playerViewModel: PlayerViewModel, onBack: () -> Unit) {
                         track = track,
                     )
                     Spacer(Modifier.width(Spacing.md))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(track.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                         Text(track.artist, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+
+                    if (userIsScrolling) {
+                        FilledTonalButton(
+                            onClick = { userIsScrolling = false },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.height(30.dp),
+                        ) {
+                            Text("Resume Sync", style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
             }
 
-            if (track.lyrics.isEmpty()) {
+            // Sync Offset controls toolbar
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Spacing.md),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = "Sync Offset: ${if (offsetMs > 0) "+$offsetMs" else "$offsetMs"} ms",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (offsetMs != 0L) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            if (offsetMs != 0L) {
+                                FilledTonalButton(
+                                    onClick = { playerViewModel.resetLyricOffset() },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(26.dp),
+                                ) {
+                                    Text("Reset", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            FilledTonalButton(
+                                onClick = { playerViewModel.adjustLyricOffset(-500L) },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(28.dp),
+                            ) { Text("-0.5s", style = MaterialTheme.typography.labelSmall) }
+
+                            FilledTonalButton(
+                                onClick = { playerViewModel.adjustLyricOffset(-50L) },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(28.dp),
+                            ) { Text("-50ms", style = MaterialTheme.typography.labelSmall) }
+
+                            FilledTonalButton(
+                                onClick = { playerViewModel.adjustLyricOffset(50L) },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(28.dp),
+                            ) { Text("+50ms", style = MaterialTheme.typography.labelSmall) }
+
+                            FilledTonalButton(
+                                onClick = { playerViewModel.adjustLyricOffset(500L) },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(28.dp),
+                            ) { Text("+0.5s", style = MaterialTheme.typography.labelSmall) }
+                        }
+                    }
+                }
+            }
+
+            if (effectiveLyrics.isEmpty()) {
                 item {
                     EmptyState(
                         title = "No synced lyrics",
-                        message = "This sample track has no embedded lyrics yet. Lyrics are shown only when the track actually carries them — none are invented here.",
+                        message = "No companion .lrc file found for this track. Place a companion file (e.g. \"${track.title}.lrc\") in the same storage directory to enjoy time-synchronized lyrics.",
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             } else {
-                items(track.lyrics.withIndex().toList()) { (index, line) ->
-                    val nextStart = track.lyrics.getOrNull(index + 1)?.startMs ?: Long.MAX_VALUE
-                    val active = state.positionMs in line.startMs until nextStart
+                items(effectiveLyrics.withIndex().toList()) { (index, line) ->
+                    val active = index == activeIndex
                     Text(
                         text = line.text,
                         style = if (active) {
-                            MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                            MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 21.sp)
                         } else {
                             MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp)
                         },
                         color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable {
+                                val seekTarget = (line.startMs - offsetMs).coerceAtLeast(0L)
+                                playerViewModel.seekTo(seekTarget)
+                                userIsScrolling = false
+                            }
                             .padding(vertical = Spacing.sm),
                     )
                 }

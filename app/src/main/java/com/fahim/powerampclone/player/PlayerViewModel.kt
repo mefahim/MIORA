@@ -4,11 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fahim.powerampclone.data.MockMusicRepository
 import com.fahim.powerampclone.data.MusicRepository
+import com.fahim.powerampclone.data.lyrics.InMemoryLyricOffsetStore
+import com.fahim.powerampclone.data.lyrics.LyricOffsetStore
+import com.fahim.powerampclone.data.lyrics.LrcParser
+import com.fahim.powerampclone.model.LyricLine
 import com.fahim.powerampclone.model.RepeatMode
 import com.fahim.powerampclone.model.Track
 import com.fahim.powerampclone.playback.EqualizerController
 import com.fahim.powerampclone.playback.EqualizerState
 import com.fahim.powerampclone.playback.PlaybackManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,6 +52,41 @@ class PlayerViewModel(
     val equalizerController: EqualizerController = playbackManager?.equalizerController ?: EqualizerController()
     val equalizerState: StateFlow<EqualizerState> = equalizerController.state
 
+    val lyricOffsetStore: LyricOffsetStore = playbackManager?.lyricOffsetStore ?: InMemoryLyricOffsetStore()
+    private val _lyricOffsetMs = MutableStateFlow(0L)
+    val lyricOffsetMs: StateFlow<Long> = _lyricOffsetMs.asStateFlow()
+
+    private val _currentTrackLyrics = MutableStateFlow<List<LyricLine>>(emptyList())
+    val currentTrackLyrics: StateFlow<List<LyricLine>> = _currentTrackLyrics.asStateFlow()
+
+    fun adjustLyricOffset(deltaMs: Long) {
+        val current = state.value.currentTrack ?: return
+        val updated = _lyricOffsetMs.value + deltaMs
+        _lyricOffsetMs.value = updated
+        lyricOffsetStore.setOffset(current.id, updated)
+    }
+
+    fun resetLyricOffset() {
+        val current = state.value.currentTrack ?: return
+        _lyricOffsetMs.value = 0L
+        lyricOffsetStore.clearOffset(current.id)
+    }
+
+    fun setLyricsForCurrentTrack(lyrics: List<LyricLine>) {
+        _currentTrackLyrics.value = lyrics
+    }
+
+    fun loadLyricsForTrack(track: Track, context: android.content.Context? = null) {
+        if (track.lyrics.isNotEmpty()) {
+            _currentTrackLyrics.value = track.lyrics
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val resolved = LrcParser.resolveLyricsForTrack(context, track)
+            _currentTrackLyrics.value = resolved
+        }
+    }
+
     fun setEqualizerBandGain(bandIndex: Int, gainDb: Float) {
         equalizerController.setBandGain(bandIndex, gainDb)
     }
@@ -75,6 +115,29 @@ class PlayerViewModel(
                 )
             }
         }
+
+        viewModelScope.launch {
+            var lastTrackId = -1L
+            state.collect { s ->
+                val track = s.currentTrack
+                if (track != null && track.id != lastTrackId) {
+                    lastTrackId = track.id
+                    _lyricOffsetMs.value = lyricOffsetStore.getOffset(track.id)
+                    if (track.lyrics.isNotEmpty()) {
+                        _currentTrackLyrics.value = track.lyrics
+                    } else {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val resolved = LrcParser.resolveLyricsForTrack(null, track)
+                            _currentTrackLyrics.value = resolved
+                        }
+                    }
+                } else if (track == null) {
+                    lastTrackId = -1L
+                    _lyricOffsetMs.value = 0L
+                    _currentTrackLyrics.value = emptyList()
+                }
+            }
+        }
     }
 
     fun playTrack(track: Track, queue: List<Track>? = null) {
@@ -88,6 +151,10 @@ class PlayerViewModel(
             else -> listOf(track) + _state.value.queue
         }
         val index = effectiveQueue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
+        _lyricOffsetMs.value = lyricOffsetStore.getOffset(track.id)
+        if (track.lyrics.isNotEmpty()) {
+            _currentTrackLyrics.value = track.lyrics
+        }
         _state.update {
             it.copy(
                 queue = effectiveQueue,
@@ -125,6 +192,10 @@ class PlayerViewModel(
             (s.currentIndex + 1) % s.queue.size
         }
         val nextTrack = s.queue[nextIndex]
+        _lyricOffsetMs.value = lyricOffsetStore.getOffset(nextTrack.id)
+        if (nextTrack.lyrics.isNotEmpty()) {
+            _currentTrackLyrics.value = nextTrack.lyrics
+        }
         _state.update {
             it.copy(
                 currentIndex = nextIndex,
@@ -146,6 +217,10 @@ class PlayerViewModel(
         if (s.positionMs > 3000L) { seekTo(0L); return }
         val prevIndex = if (s.currentIndex == 0) s.queue.size - 1 else s.currentIndex - 1
         val prevTrack = s.queue[prevIndex]
+        _lyricOffsetMs.value = lyricOffsetStore.getOffset(prevTrack.id)
+        if (prevTrack.lyrics.isNotEmpty()) {
+            _currentTrackLyrics.value = prevTrack.lyrics
+        }
         _state.update {
             it.copy(
                 currentIndex = prevIndex,
