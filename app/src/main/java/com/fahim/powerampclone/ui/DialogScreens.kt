@@ -33,6 +33,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -385,7 +387,7 @@ private fun MetadataGroup(title: String, pairs: List<Pair<String, String>>) {
     }
 }
 
-/** Equalizer screen connected to hardware/software AudioEngine equalizer */
+/** Equalizer screen connected to hardware/software AudioEngine equalizer and advanced DSP */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EqualizerScreen(
@@ -395,6 +397,7 @@ fun EqualizerScreen(
     val fallbackController = remember { EqualizerController() }
     val eqState by (playerViewModel?.equalizerState ?: fallbackController.state).collectAsState()
     val presets = EqualizerController.PRESETS
+    val customPresets = eqState.customPresets
     val frequencies = eqState.frequencies
     val gains = eqState.bandGains
     val preset = eqState.preset
@@ -403,10 +406,33 @@ fun EqualizerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Equalizer", style = MaterialTheme.typography.titleLarge) },
+                title = { Text("Equalizer & DSP", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = Spacing.md),
+                    ) {
+                        Text(
+                            text = if (eqState.enabled) "ON" else "OFF",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (eqState.enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = Spacing.xs),
+                        )
+                        Switch(
+                            checked = eqState.enabled,
+                            onCheckedChange = { en ->
+                                if (playerViewModel != null) {
+                                    playerViewModel.setEqualizerEnabled(en)
+                                } else {
+                                    fallbackController.setEnabled(en)
+                                }
+                            },
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
@@ -421,22 +447,91 @@ fun EqualizerScreen(
             contentPadding = PaddingValues(Spacing.lg),
         ) {
             item {
-                Text("10-band equalizer", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 22.sp))
-                Spacer(Modifier.height(Spacing.xs))
                 Text(
                     text = if (isHardwareAttached) {
-                        "Hardware 10-band equalizer active — processing audio output in real-time."
+                        "Hardware DSP pipeline active — Real-time audio processing"
                     } else {
-                        "10-band equalizer active — adjusting audio playback profile."
+                        "Software DSP audio profile active"
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isHardwareAttached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(Spacing.lg))
+                Spacer(Modifier.height(Spacing.md))
 
-                // Presets chip row
+                // Tone Controls Card (Bass & Treble)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                ) {
+                    Column(Modifier.padding(Spacing.md)) {
+                        Text("Tone Controls", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Spacer(Modifier.height(Spacing.xs))
+
+                        // Bass Tone
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("Bass Tone", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "${if (eqState.bassToneDb >= 0) "+" else ""}${eqState.bassToneDb.toInt()} dB",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Slider(
+                            value = eqState.bassToneDb,
+                            onValueChange = { b ->
+                                if (playerViewModel != null) playerViewModel.setBassTone(b)
+                                else fallbackController.setBassTone(b)
+                            },
+                            valueRange = -12f..12f,
+                            steps = 23,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+
+                        // Treble Tone
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("Treble Tone", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "${if (eqState.trebleToneDb >= 0) "+" else ""}${eqState.trebleToneDb.toInt()} dB",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        Slider(
+                            value = eqState.trebleToneDb,
+                            onValueChange = { t ->
+                                if (playerViewModel != null) playerViewModel.setTrebleTone(t)
+                                else fallbackController.setTrebleTone(t)
+                            },
+                            valueRange = -12f..12f,
+                            steps = 23,
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(Spacing.lg))
+                Text("Equalizer Presets", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(Spacing.xs))
+
+                // Presets chip row (Built-in + Custom)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    items(presets.keys.toList()) { name ->
+                    val allPresets = presets.keys.toList() + customPresets.keys.toList()
+                    items(allPresets) { name ->
                         FilterChip(
                             selected = preset == name,
                             onClick = {
@@ -471,6 +566,8 @@ fun EqualizerScreen(
                     }
                 }
                 Spacer(Modifier.height(Spacing.lg))
+                Text("10-Band Graphic Equalizer", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(Spacing.xs))
             }
 
             items(gains.size) { i ->
@@ -517,7 +614,131 @@ fun EqualizerScreen(
                 }
             }
 
+            // Advanced DSP Effects (BassBoost, Virtualizer, Reverb)
             item {
+                Spacer(Modifier.height(Spacing.lg))
+                Text("Audio Effects & Spatializer", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(Spacing.sm))
+
+                // BassBoost Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                ) {
+                    Column(Modifier.padding(Spacing.md)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text("Bass Boost", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text(
+                                    text = if (eqState.isBassBoostSupported) "Hardware supported" else "Simulation / Platform default",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = eqState.bassBoostEnabled,
+                                onCheckedChange = { en ->
+                                    if (playerViewModel != null) playerViewModel.setBassBoostEnabled(en)
+                                    else fallbackController.setBassBoostEnabled(en)
+                                },
+                            )
+                        }
+                        if (eqState.bassBoostEnabled) {
+                            Slider(
+                                value = eqState.bassBoostStrength.toFloat(),
+                                onValueChange = { st ->
+                                    if (playerViewModel != null) playerViewModel.setBassBoostStrength(st.toInt())
+                                    else fallbackController.setBassBoostStrength(st.toInt())
+                                },
+                                valueRange = 0f..1000f,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        }
+                    }
+                }
+
+                // Virtualizer Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                ) {
+                    Column(Modifier.padding(Spacing.md)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text("Virtualizer (3D Surround)", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                                Text(
+                                    text = if (eqState.isVirtualizerSupported) "Hardware supported" else "Simulation / Platform default",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = eqState.virtualizerEnabled,
+                                onCheckedChange = { en ->
+                                    if (playerViewModel != null) playerViewModel.setVirtualizerEnabled(en)
+                                    else fallbackController.setVirtualizerEnabled(en)
+                                },
+                            )
+                        }
+                        if (eqState.virtualizerEnabled) {
+                            Slider(
+                                value = eqState.virtualizerStrength.toFloat(),
+                                onValueChange = { st ->
+                                    if (playerViewModel != null) playerViewModel.setVirtualizerStrength(st.toInt())
+                                    else fallbackController.setVirtualizerStrength(st.toInt())
+                                },
+                                valueRange = 0f..1000f,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        }
+                    }
+                }
+
+                // Reverb Presets Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.sm),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                ) {
+                    Column(Modifier.padding(Spacing.md)) {
+                        Text("Reverb (Acoustic Space)", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                        Spacer(Modifier.height(Spacing.xs))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                            items(EqualizerController.REVERB_PRESETS) { rName ->
+                                FilterChip(
+                                    selected = eqState.reverbPreset == rName,
+                                    onClick = {
+                                        if (playerViewModel != null) playerViewModel.setReverbPreset(rName)
+                                        else fallbackController.setReverbPreset(rName)
+                                    },
+                                    label = { Text(rName) },
+                                    shape = RoundedCornerShape(999.dp),
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Spacer(Modifier.height(Spacing.sm))
                 Text(
                     text = "Preset: $preset — drag a fader to switch to Custom.",

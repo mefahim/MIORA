@@ -103,6 +103,42 @@ class PlayerViewModel(
         equalizerController.reset()
     }
 
+    fun setBassBoostEnabled(enabled: Boolean) {
+        equalizerController.setBassBoostEnabled(enabled)
+    }
+
+    fun setBassBoostStrength(strength: Int) {
+        equalizerController.setBassBoostStrength(strength)
+    }
+
+    fun setVirtualizerEnabled(enabled: Boolean) {
+        equalizerController.setVirtualizerEnabled(enabled)
+    }
+
+    fun setVirtualizerStrength(strength: Int) {
+        equalizerController.setVirtualizerStrength(strength)
+    }
+
+    fun setReverbPreset(presetName: String) {
+        equalizerController.setReverbPreset(presetName)
+    }
+
+    fun setBassTone(gainDb: Float) {
+        equalizerController.setBassTone(gainDb)
+    }
+
+    fun setTrebleTone(gainDb: Float) {
+        equalizerController.setTrebleTone(gainDb)
+    }
+
+    fun saveCustomEqualizerPreset(name: String) {
+        equalizerController.saveCustomPreset(name)
+    }
+
+    fun deleteCustomEqualizerPreset(name: String) {
+        equalizerController.deleteCustomPreset(name)
+    }
+
     init {
         if (playbackManager == null) {
             val tracks = repository.tracks()
