@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0-beta.2] - 2026-11-11
+
+### 🚀 Highlights
+- **Application ID Migration**: Successfully migrated official application identity to `com.fhf.miora` across Gradle config, Service intent actions, FileProvider authorities, and AAPT2 badging.
+- **Phase 6 Master QA, Stress & Security Verification**: 159 automated unit and regression tests passing 100% across 21 test suites.
+- **High-Volume 50k Track Scalability**: Validated sub-millisecond lookups and rapid search across 50,000 synthetic tracks, alongside 10,000 item playback queue navigation.
+- **Security & R8 Hardening**: Enforced least-privilege Android 14 permissions, cryptographic update fingerprint verification, restricted FileProvider cache paths, and comprehensive ProGuard rules.
+
+### Added
+- `Phase6FullRegressionTest.kt`: 16 cross-subsystem regression tests covering identity, playback state transitions, queue edge cases, lyrics offsets, and hardware DSP clamps.
+- `Phase6StressAndPerformanceTest.kt`: 5 high-volume performance benchmarks validating 50k track operations, 10k queue transitions, 2k LRC line parsing, and 1,000 DSP parameter mutations.
+- `app/proguard-rules.pro`: Hardened keep rules for Coroutines, Media3, Domain Models, FileProvider, and SQLite.
+- Documentation:
+  - `docs/PHASE_6_0_BASELINE_AUDIT.md`: Baseline identity and action namespace migration report.
+  - `docs/PHASE_6_1_REGRESSION_QA_REPORT.md`: Full regression QA validation report (154 tests).
+  - `docs/PHASE_6_2_STRESS_PERFORMANCE_REPORT.md`: High-volume stress & scalability benchmark report.
+  - `docs/PHASE_6_3_SECURITY_AUDIT_REPORT.md`: Security, permissions, and manifest audit report.
+  - `docs/PHASE_6_COMPLETION_REPORT.md`: Master Phase 6 completion and release acceptance report.
+
+---
+
 ## [0.1.0-beta.1] - 2026-11-10
 
 ### 🚀 Highlights
