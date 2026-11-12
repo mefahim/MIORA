@@ -144,9 +144,13 @@ interface OnlineMediaProvider {
 
 ---
 
-## 5. Explicit Policy & Architectural Verdict
+## 5. Confirmed Provider Implementation Strategy
 
-1. **No Pseudo-Players:** MIORA will never present an external-app intent launcher as an "integrated audio player".
-2. **Honest Capability Reporting:** If a user selects a YouTube track that can only be discovered via the YouTube Data API v3 (Provider A) and no authorized direct audio stream is available, the UI will explicitly display:
-   > *"This track is indexed via the official YouTube API. Direct in-app streaming requires an authorized provider (such as Subsonic or open stream provider). Tap to open in YouTube Music."*
-3. **Multi-Source Support:** MIORA Next will implement Provider E (Subsonic/Navidrome) and Provider F (Open Audio) as the verified, fully authorized in-app audio streaming providers, alongside Provider A (YouTube Data API v3) for search and library indexing, and Provider G (`PlaybackRouter`) as the compliant fallback.
+Based on confirmed owner decisions:
+1. **Genuine In-App Streaming Mandated:** MIORA will implement direct in-app online audio streaming inside MIORA's own Media3 ExoPlayer, eliminating external-app handoffs as the primary playback mode.
+2. **Multi-Source Resolver Implementation:**
+   - **Primary Streaming Resolver:** Clean-room direct stream extractor inspired by Metrolist's InnerTube architecture, resolving direct 160kbps Opus / 128kbps AAC stream URLs with dynamic cipher and throttling handling.
+   - **Secondary / Proxy Resolver:** Piped / Invidious proxy fallback when YouTube cipher modifications require upstream resolver updates.
+   - **Discovery & Library Sync:** Official YouTube Data API v3 retained for quota-efficient search, auto-complete, and user playlist synchronization.
+   - **Personal Cloud / Open Audio:** Subsonic/Navidrome and open audio repositories supported as complementary authorized providers.
+   - **Safety Net Fallback:** `PlaybackRouter.kt` retained as emergency fallback only.

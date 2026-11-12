@@ -86,14 +86,16 @@ MIORA Next strictly mandates hardware-backed cryptographic security:
 
 ---
 
-## 5. Summary of Unresolved Decisions Requiring Owner Sign-Off
+## 5. Confirmed Owner Decisions & Implementation Mandate
 
-The following strategic questions require explicit owner determination before M7 code authoring begins:
+The strategic direction for MIORA Next has been formally confirmed by the project owner:
 
-1. **Owner Decision 1: Streaming Scope for YouTube Content**
-   - *Option A (Recommended / 100% Compliant):* Keep YouTube content strictly as Discovery & Playlist Sync via Data API v3 (Provider A), with audio routed via `PlaybackRouter.kt` external intent, while implementing full in-app audio streaming via Subsonic/Navidrome (Provider E) and Open Audio (Provider F).
-   - *Option B (F-Droid / Proxy Only):* Support in-app streaming of YouTube audio solely through user-configured Piped / Invidious proxy instances (Provider D), avoiding embedded BotGuard/QuickJS circumvention code.
-   - *Option C (Metrolist InnerTube Clone):* Embed reverse-engineered InnerTube cipher solvers and BotGuard WebViews directly into MIORA. *(Engineering warning: High legal risk, frequent breakage, and prohibited from Google Play).*
+1. **Owner Decision 1: Streaming Strategy Confirmed**
+   - **CONFIRMED:** Deliver genuine Metrolist-inspired online music streaming directly inside MIORA's own Media3 player, combined with the existing local music player engine.
+   - **Resolution Mechanism:** Utilize a clean-room, robust stream resolver architecture incorporating direct stream extraction with fallback proxy support, ensuring uninterrupted background audio and seamless queue integration.
+   - **Security Guarantee:** Maintain MIORA's strict security posture: reject raw `SAPISID` session cookie sniffing in favor of OAuth 2.0 PKCE and Android Keystore AES-256-GCM hardware encryption for account synchronization.
 
-2. **Owner Decision 2: Target Distribution Priority**
-   - Is Google Play Store publishing a mandatory requirement for MIORA Next, or is GitHub Releases + F-Droid the primary intended distribution vehicle?
+2. **Owner Decision 2: Primary Distribution Channels Confirmed**
+   - **CONFIRMED:** GitHub Releases, F-Droid, and Obtainium are established as the primary distribution channels.
+   - **Policy Alignment:** Google Play Store submission is not mandatory for MIORA Next, removing restrictive constraints against YouTube background audio playback and stream downloading while preserving complete open-source transparency.
+   - **Repository Baseline:** Active development proceeds on branch `v0.2-dev`; stable `main` remains untouched. Milestone sequence M0 through M9 remains frozen.
